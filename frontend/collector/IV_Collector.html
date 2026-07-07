@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collector Dashboard</title>
+    <link rel="stylesheet" href="collector.css">
+
+    <!-- Leaflet.js CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+
+<body>
+    <div class="dashboard">
+        <h2>Collector Dashboard</h2>
+
+        <!-- Stats -->
+        <div class="stats">
+            <p><strong>Total Households:</strong> <span id="total"></span></p>
+            <p><strong>Completed:</strong> <span id="completed">0</span></p>
+            <p><strong>Pending:</strong> <span id="pending">0</span></p>
+            <p><strong>Not Available:</strong> <span id="notavailable">0</span></p>
+            <div class="progress-bar">
+                <div id="progress"></div>
+            </div>
+        </div>
+
+        <!-- Household Button -->
+        <button onclick="toggleHouseholds()" class="toggle-btn">Show Households</button>
+
+        <!-- Household List -->
+        <div id="householdList" class="hidden">
+            <ul id="households"></ul>
+        </div>
+
+        <!-- Map -->
+        <h3>Live Tracking Map</h3>
+        <div id="map"></div>
+    </div>
+
+    <!-- Leaflet.js -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="collector.js"></script>
+</body>
+
+</html>

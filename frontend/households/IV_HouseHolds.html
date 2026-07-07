@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Smart Collector Dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+
+<body>
+    <div class="container">
+        <nav class="sidebar">
+            <h2>HouseHold</h2>
+            <ul>
+                <li onclick="showSection('map')">Map</li>
+                <li onclick="showSection('feedback')">Feedback</li>
+                <li onclick="showSection('report')">Report</li>
+                <li onclick="showSection('scan')">Scan</li>
+                <li onclick="showSection('emergency')">Emergency</li>
+                <li onclick="showSection('garbage')">Garbage</li>
+            </ul>
+        </nav>
+
+        <main class="content">
+            <div id="map" class="section hidden">
+                <h3>Live Map</h3>
+                <div id="mapArea"></div>
+                <P>[ When the HouseHold give the status like picked up or not this will be shown automatically in the map ]</P>
+            </div>
+
+            <div id="feedback" class="section hidden">
+                <h3>Feedback</h3>
+                <label>Name:</label>
+                <input id="feedbackName" type="text" />
+                <label>Mobile:</label>
+                <input id="feedbackPhone" type="text" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+                <label>Collector Behaviour:</label>
+                <select id="collectorBehaviour">
+                    <option value="Excellent">Excellent</option>
+                    <option value="Good">Good</option>
+                    <option value="Bad">Bad</option>
+                </select>
+                <button onclick="submitFeedback()">Submit Feedback</button>
+            </div>
+
+            <div id="report" class="section hidden">
+                <h3>Report</h3>
+                <label>Name:</label>
+                <input id="reportName" type="text" />
+                <label>Address:</label>
+                <input id="reportAddress" type="text" />
+                <label>Comments:</label>
+                <textarea id="reportComments" rows="4" oninput="limitWords(this, 200)"></textarea>
+                <button onclick="submitReport()">Submit Report</button>
+            </div>
+
+            <div id="scan" class="section hidden">
+                <h3>Waste Scanner</h3>
+                <button onclick="scanObject()">Start Scan</button>
+                <p id="scanResult"></p>
+                <p>[ Here we will Attach the image processing scanner to segrate the garbages ]</p>
+            </div>
+
+            <div id="emergency" class="section hidden">
+                <h3>Emergency Pickup</h3>
+                <button onclick="emergencyCall()">📞 Call Admin</button>
+
+            </div>
+
+            <div id="garbage" class="section hidden">
+                <h3>Garbage Pickup</h3>
+                <button id="pickedBtn" onclick="garbageClicked('picked')">Picked Up</button>
+                <button id="notPickedBtn" onclick="garbageClicked('notPicked')">Not Picked Up</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ULB Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-color: #3f51b5;
+            --secondary-color: #f5f5f5;
+            --card-bg: #fff;
+            --text-color-dark: #333;
+            --text-color-light: #fff;
+            --active-green: #4caf50;
+            --stopped-red: #f44336;
+            --enroute-yellow: #ff9800;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Login Page Styles */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--secondary-color);
+        }
+
+        .login-box {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 350px;
+            text-align: center;
+        }
+
+        .login-box h2 {
+            margin-top: 0;
+            color: var(--text-color-dark);
+        }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: var(--text-color-light);
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .login-btn:hover {
+            background-color: #303f9f;
+        }
+
+        /* Dashboard Layout */
+        .dashboard-container {
+            display: none;
+            /* Initially hide the dashboard */
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary-color);
+            color: var(--text-color-light);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+
+        .logo-text {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .main-nav ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .main-nav li {
+            margin-bottom: 15px;
+        }
+
+        .main-nav a {
+            color: var(--text-color-light);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .main-nav a:hover,
+        .main-nav a.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .main-nav a i {
+            margin-right: 10px;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            background-color: var(--secondary-color);
+        }
+
+        .content-section {
+            display: none;
+            /* All content sections are hidden by default */
+        }
+
+        .content-section.active {
+            display: block;
+            /* Show the active content section */
+        }
+
+        /* Dashboard Common Styles */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .header-right .user-icon {
+            font-size: 24px;
+            margin-left: 10px;
+        }
+
+        .analytics-grid,
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header h2 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        /* Live Tracking Styles */
+        .map-placeholder {
+            position: relative;
+            background-image: url('https://via.placeholder.com/1200x600.png?text=Live+Map+Placeholder');
+            background-size: cover;
+            background-position: center;
+            height: 600px;
+            border-radius: 8px;
+        }
+
+        .map-truck {
+            position: absolute;
+            color: #fff;
+            font-size: 24px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .truck-status {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            padding: 2px 5px;
+            border-radius: 3px;
+            color: #fff;
+        }
+
+        .truck-status.active {
+            background-color: var(--active-green);
+        }
+
+        .truck-status.stopped {
+            background-color: var(--stopped-red);
+        }
+
+        .truck-status.enroute {
+            background-color: var(--enroute-yellow);
+        }
+
+        /* New dashboard content styles */
+        .dashboard-content {
+            padding: 20px;
+            background-color: var(--secondary-color);
+        }
+
+        .pickup-info {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .pickup-info h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="login-page" class="login-container">
+        <div class="login-box">
+            <div class="logo-section">
+                <i class="fas fa-chart-bar logo-icon"></i>
+                <span class="logo-text">Urban Local Body</span>
+            </div>
+            <h2>Login</h2>
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Enter your username" required>
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="login-btn">Log In</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard-page" class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo-section">
+                <i class="fas fa-chart-bar logo-icon"></i>
+                <span class="logo-text">Urban Local Body</span>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li class="nav-admin"><a href="#analytics" class="nav-link" data-target="analytics"><i class="fas fa-chart-line"></i>Analytics</a></li>
+                    <li class="nav-admin"><a href="#live-tracking" class="nav-link" data-target="live-tracking"><i class="fas fa-map-marker-alt"></i>Live Tracking</a></li>
+                    <li class="nav-admin nav-collector"><a href="#collector-dashboard" class="nav-link" data-target="collector-dashboard"><i class="fas fa-truck-moving"></i>Collector Dashboard</a></li>
+                    <li class="nav-admin nav-householder"><a href="#householder-dashboard" class="nav-link" data-target="householder-dashboard"><i class="fas fa-home"></i>Householder Dashboard</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="dashboard-header">
+                <div class="header-left">
+                    <h1 id="dashboard-title">Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <span class="user-name">Welcome, <span id="user-role"></span></span>
+                    <i class="fas fa-user-circle user-icon"></i>
+                </div>
+            </header>
+
+            <div id="content-area">
+                <section id="analytics" class="content-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Analytics & Metrics</h2>
+                        </div>
+                        <div class="card-content analytics-grid">
+                            <div class="card data-block">
+                                <h3>Daily Waste Collected</h3>
+                                <span class="data-value">94.4K</span>
+                                <span class="data-unit">Tons</span>
+                            </div>
+                            <div class="card data-block">
+                                <h3>Recycling Rate</h3>
+                                <span class="data-value">65.06%</span>
+                                <span class="data-unit"></span>
+                            </div>
+                            <div class="card chart-container">
+                                <canvas id="dailyWasteChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="live-tracking" class="content-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Live Tracking of Vehicles</h2>
+                        </div>
+                        <div class="card-content map-content">
+                            <div class="map-placeholder">
+                                <div class="map-truck" style="top: 30%; left: 40%;"><i class="fas fa-truck-moving"></i>
+                                    <div class="truck-status active">Active</div>
+                                </div>
+                                <div class="map-truck" style="top: 60%; left: 70%;"><i class="fas fa-truck-moving"></i>
+                                    <div class="truck-status stopped">Stopped</div>
+                                </div>
+                                <div class="map-truck" style="top: 20%; left: 80%;"><i class="fas fa-truck-moving"></i>
+                                    <div class="truck-status enroute">En Route</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="reports" class="content-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Report Generation</h2>
+                        </div>
+                        <div class="card-content report-form">
+                            <form>
+                                <label for="report-type">Report Type</label>
+                                <select id="report-type" name="report-type">
+                                    <option>Daily</option>
+                                    <option>Weekly</option>
+                                    <option>Monthly</option>
+                                </select>
+                                <label for="department">Department</label>
+                                <input type="text" id="department" value="Waste Management">
+                                <label for="date-range">Date Range</label>
+                                <input type="text" id="date-range" placeholder="Start Date - End Date">
+                                <label for="format">Format</label>
+                                <select id="format" name="format">
+                                    <option>PDF</option>
+                                    <option>CSV</option>
+                                </select>
+                                <button type="submit" class="generate-btn">Generate Report</button>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="collector-dashboard" class="content-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Collector Dashboard: Daily Tasks</h2>
+                        </div>
+                        <div class="card-content">
+                            <h3>My Assigned Route</h3>
+                            <p>You have **25 pickups** scheduled for today.</p>
+                            <p> **Live Map:** <a href="#live-tracking">Click here to see your live route on the map.</a> (This will navigate you to the admin map section)</p>
+                            <ul class="task-list">
+                                <li>
+                                    <i class="fas fa-check-circle"></i> **Pickup:** 123 Main St - Completed
+                                </li>
+                                <li>
+                                    <i class="fas fa-times-circle"></i> **Pickup:** 456 Elm St - Missed (Report Issue)
+                                </li>
+                                <li>
+                                    <i class="fas fa-circle-notch"></i> **Pickup:** 789 Oak Ave - Pending
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="householder-dashboard" class="content-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Householder Dashboard</h2>
+                        </div>
+                        <div class="card-content">
+                            <div class="pickup-info">
+                                <h3>Next Pickup Scheduled</h3>
+                                <p>Your next pickup is **Tomorrow, October 25th**.</p>
+                                <p>Collection time: **7:00 AM - 9:00 AM**</p>
+                            </div>
+                            <div class="pickup-info">
+                                <h3>Your Waste Segregation Stats</h3>
+                                <p>You have successfully segregated waste for the past **4 weeks**.</p>
+                                <p>Keep up the great work! 🎉</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginPage = document.getElementById('login-page');
+            const dashboardPage = document.getElementById('dashboard-page');
+            const loginForm = document.getElementById('login-form');
+            const userRoleSpan = document.getElementById('user-role');
+            const navLinks = document.querySelectorAll('.main-nav .nav-link');
+            const contentSections = document.querySelectorAll('.content-section');
+            const navElements = document.querySelectorAll('.main-nav li');
+
+            // Handle Login Form Submission
+            loginForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                let userRole = '';
+
+                // Hardcoded credentials and roles
+                if (username === 'admin' && password === 'password123') {
+                    userRole = 'admin';
+                } else if (username === 'collector' && password === 'collector123') {
+                    userRole = 'collector';
+                } else if (username === 'householder' && password === 'householder123') {
+                    userRole = 'householder';
+                }
+
+                if (userRole) {
+                    loginPage.style.display = 'none';
+                    dashboardPage.style.display = 'flex';
+                    showDashboard(userRole);
+                } else {
+                    alert('Invalid username or password.');
+                }
+            });
+
+            // Function to show the correct dashboard based on user role
+            function showDashboard(role) {
+                // Hide all nav links initially
+                navElements.forEach(el => el.style.display = 'none');
+
+                userRoleSpan.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+
+                if (role === 'admin') {
+                    document.getElementById('dashboard-title').textContent = 'Admin Dashboard';
+                    document.querySelectorAll('.nav-admin').forEach(el => el.style.display = 'block');
+                    document.getElementById('analytics').classList.add('active');
+                    initializeDashboard();
+                } else if (role === 'collector') {
+                    document.getElementById('dashboard-title').textContent = 'Collector Dashboard';
+                    document.querySelectorAll('.nav-collector').forEach(el => el.style.display = 'block');
+                    document.getElementById('collector-dashboard').classList.add('active');
+                } else if (role === 'householder') {
+                    document.getElementById('dashboard-title').textContent = 'Householder Dashboard';
+                    document.querySelectorAll('.nav-householder').forEach(el => el.style.display = 'block');
+                    document.getElementById('householder-dashboard').classList.add('active');
+                }
+            }
+
+            // Handle Navigation Clicks
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // Remove 'active' class from all links
+                    navLinks.forEach(nav => nav.classList.remove('active'));
+                    // Add 'active' class to the clicked link
+                    this.classList.add('active');
+
+                    // Hide all content sections
+                    contentSections.forEach(section => section.classList.remove('active'));
+
+                    // Show the target content section
+                    const targetId = this.getAttribute('data-target');
+                    const targetSection = document.getElementById(targetId);
+                    if (targetSection) {
+                        targetSection.classList.add('active');
+                    }
+                });
+            });
+
+            // Function to initialize dashboard elements (charts, etc.)
+            function initializeDashboard() {
+                // Check if chart has already been initialized to prevent errors
+                if (window.myChart) {
+                    window.myChart.destroy();
+                }
+
+                const ctx = document.getElementById('dailyWasteChart').getContext('2d');
+                window.myChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+                        datasets: [{
+                            label: 'Waste Collected (Tons)',
+                            data: [120, 150, 130, 180, 160, 190, 200],
+                            backgroundColor: 'rgba(63, 81, 181, 0.8)',
+                            borderColor: 'rgba(63, 81, 181, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

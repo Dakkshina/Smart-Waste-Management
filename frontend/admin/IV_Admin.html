@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+
+<body>
+    <div class="container">
+        <!-- Left Sidebar -->
+        <nav class="sidebar">
+            <h2>Admin</h2>
+            <ul>
+                <li onclick="showSection('collectors')">Collectors Details</li>
+                <li onclick="showSection('collectorReport')">Collector Report</li>
+                <li onclick="showSection('warehouseReport')">Warehouse Report</li>
+                <li onclick="showSection('totalReport')">Total Report</li>
+                <li onclick="showSection('vehicle')">Vehicles</li>
+                <li onclick="showSection('tracking')">Live Tracking</li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="content">
+            <div id="collectors" class="section hidden">
+                <h3>Collectors Details</h3>
+                <ul id="collectorList"></ul>
+            </div>
+
+            <div id="collectorReport" class="section hidden">
+                <h3>Collector Report</h3>
+                <p>[ Reports of individual collectors will appear here given by HouseHolds]</p>
+            </div>
+
+            <div id="warehouseReport" class="section hidden">
+                <h3>Warehouse Report</h3>
+                <p>[ Waste segregation and warehouse data here will be given by analytics Dashboard ]</p>
+            </div>
+
+            <div id="totalReport" class="section hidden">
+                <h3>Total Report</h3>
+                <p>[ All total Report (Collector Report,HouseHolds Report,Warehoue Report) will be appear here ]</p>
+            </div>
+
+            <div id="vehicle" class="section hidden">
+                <h3>Vehicles</h3>
+                <ul id="vehicleList"></ul>
+            </div>
+
+            <div id="tracking" class="section hidden">
+                <h3>Live Tracking</h3>
+                <div id="map"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="admin.js"></script>
+</body>
+
+</html>
