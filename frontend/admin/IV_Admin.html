@@ -1,65 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="admin.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartWaste — Admin Dashboard</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <link rel="stylesheet" href="IV_Admin.css">
 </head>
-
 <body>
-    <div class="container">
-        <!-- Left Sidebar -->
-        <nav class="sidebar">
-            <h2>Admin</h2>
-            <ul>
-                <li onclick="showSection('collectors')">Collectors Details</li>
-                <li onclick="showSection('collectorReport')">Collector Report</li>
-                <li onclick="showSection('warehouseReport')">Warehouse Report</li>
-                <li onclick="showSection('totalReport')">Total Report</li>
-                <li onclick="showSection('vehicle')">Vehicles</li>
-                <li onclick="showSection('tracking')">Live Tracking</li>
-            </ul>
-        </nav>
 
-        <!-- Main Content -->
-        <main class="content">
-            <div id="collectors" class="section hidden">
-                <h3>Collectors Details</h3>
-                <ul id="collectorList"></ul>
-            </div>
-
-            <div id="collectorReport" class="section hidden">
-                <h3>Collector Report</h3>
-                <p>[ Reports of individual collectors will appear here given by HouseHolds]</p>
-            </div>
-
-            <div id="warehouseReport" class="section hidden">
-                <h3>Warehouse Report</h3>
-                <p>[ Waste segregation and warehouse data here will be given by analytics Dashboard ]</p>
-            </div>
-
-            <div id="totalReport" class="section hidden">
-                <h3>Total Report</h3>
-                <p>[ All total Report (Collector Report,HouseHolds Report,Warehoue Report) will be appear here ]</p>
-            </div>
-
-            <div id="vehicle" class="section hidden">
-                <h3>Vehicles</h3>
-                <ul id="vehicleList"></ul>
-            </div>
-
-            <div id="tracking" class="section hidden">
-                <h3>Live Tracking</h3>
-                <div id="map"></div>
-            </div>
-        </main>
+<!-- ═══════════════ LOGIN SCREEN ═══════════════ -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-bg-art">
+    <div class="art-circle c1"></div>
+    <div class="art-circle c2"></div>
+    <div class="art-circle c3"></div>
+  </div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-ring">♻️</div>
+      <h1>SmartWaste</h1>
+      <p>Admin Control Panel</p>
     </div>
+    <form onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="loginEmail" placeholder="admin@smartwaste.in" value="admin@smartwaste.in">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" value="admin123">
+      </div>
+      <div id="loginError" class="error-msg" style="display:none"></div>
+      <button type="submit" class="btn btn-login" id="loginBtn">Sign In →</button>
+    </form>
+    <p class="login-hint">Demo credentials are pre-filled ↑</p>
+  </div>
+</div>
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="admin.js"></script>
+<!-- ═══════════════ MAIN APP ═══════════════ -->
+<div id="app" class="app" style="display:none">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-icon">♻️</span>
+      <span class="brand-name">SmartWaste</span>
+    </div>
+    <ul class="sidebar-nav">
+      <li onclick="showSection('overview')"   id="nav-overview"    class="nav-item active"><span class="ni">📊</span><span class="nt">Overview</span></li>
+      <li onclick="showSection('collectors')" id="nav-collectors"  class="nav-item"><span class="ni">👷</span><span class="nt">Collectors</span></li>
+      <li onclick="showSection('vehicles')"   id="nav-vehicles"    class="nav-item"><span class="ni">🚛</span><span class="nt">Vehicles</span></li>
+      <li onclick="showSection('routes')"     id="nav-routes"      class="nav-item"><span class="ni">🗺️</span><span class="nt">Routes</span></li>
+      <li onclick="showSection('tracking')"   id="nav-tracking"    class="nav-item"><span class="ni">📍</span><span class="nt">Live Tracking</span></li>
+      <li onclick="showSection('reports')"    id="nav-reports"     class="nav-item"><span class="ni">📈</span><span class="nt">Reports</span></li>
+      <li onclick="showSection('salary')"     id="nav-salary"      class="nav-item"><span class="ni">💰</span><span class="nt">Salary</span></li>
+      <li onclick="showSection('complaints')" id="nav-complaints"  class="nav-item"><span class="ni">🚨</span><span class="nt">Complaints</span><span class="badge" id="complaintBadge">3</span></li>
+    </ul>
+    <div class="sidebar-footer" onclick="logout()">
+      <span class="ni">🚪</span><span class="nt">Logout</span>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main" id="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <h2 id="pageTitle">Overview</h2>
+      </div>
+      <div class="topbar-right">
+        <span class="date-chip">📅 <span id="todayDate"></span></span>
+        <div class="user-chip">
+          <div class="avatar">A</div>
+          <div class="user-info"><span class="uname">Admin</span><span class="urole">Administrator</span></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT AREA -->
+    <main class="content">
+
+      <!-- ──────── OVERVIEW ──────── -->
+      <section id="sec-overview" class="section active">
+        <div class="stat-grid">
+          <div class="stat-card" style="--accent:#2ecc71">
+            <div class="sc-icon">🏠</div>
+            <div class="sc-body"><div class="sc-val" id="sHouses">0</div><div class="sc-lbl">Total Houses</div></div>
+            <div class="sc-bar" style="width:100%"></div>
+          </div>
+          <div class="stat-card" style="--accent:#00b894">
+            <div class="sc-icon">✅</div>
+            <div class="sc-body"><div class="sc-val" id="sCollected">0</div><div class="sc-lbl">Collected Today</div></div>
+            <div class="sc-bar" id="sbCollected"></div>
+          </div>
+          <div class="stat-card" style="--accent:#0984e3">
+            <div class="sc-icon">👷</div>
+            <div class="sc-body"><div class="sc-val" id="sCollectors">0</div><div class="sc-lbl">Active Collectors</div></div>
+            <div class="sc-bar" style="width:100%"></div>
+          </div>
+          <div class="stat-card" style="--accent:#fdcb6e">
+            <div class="sc-icon">⏳</div>
+            <div class="sc-body"><div class="sc-val" id="sPending">0</div><div class="sc-lbl">Pending Pickups</div></div>
+            <div class="sc-bar" id="sbPending"></div>
+          </div>
+          <div class="stat-card" style="--accent:#e17055">
+            <div class="sc-icon">🚨</div>
+            <div class="sc-body"><div class="sc-val" id="sComplaints">0</div><div class="sc-lbl">Open Complaints</div></div>
+            <div class="sc-bar" style="width:40%"></div>
+          </div>
+          <div class="stat-card" style="--accent:#a29bfe">
+            <div class="sc-icon">♻️</div>
+            <div class="sc-body"><div class="sc-val" id="sWaste">0</div><div class="sc-lbl">Waste kg Today</div></div>
+            <div class="sc-bar" style="width:75%"></div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-hd"><h3>Weekly Collection Rate</h3><span class="pill green">This Week</span></div>
+            <canvas id="weeklyChart" height="190"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-hd"><h3>Live Activity Feed</h3><span class="live-dot"></span></div>
+            <ul class="activity-list" id="activityList"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ──────── COLLECTORS ──────── -->
+      <section id="sec-collectors" class="section">
+        <div class="toolbar">
+          <input type="text" class="search-box" placeholder="🔍  Search collectors…" oninput="renderCollectors(this.value)">
+          <button class="btn btn-primary" onclick="openCollectorModal()">＋ Add Collector</button>
+        </div>
+        <div class="card table-card">
+          <table class="tbl" id="collectorsTable">
+            <thead><tr>
+              <th>ID</th><th>Name</th><th>Phone</th><th>Zone</th>
+              <th>Status</th><th>Rating</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="collectorsTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ──────── VEHICLES ──────── -->
+      <section id="sec-vehicles" class="section">
+        <div class="toolbar">
+          <input type="text" class="search-box" placeholder="🔍  Search vehicles…" oninput="renderVehicles(this.value)">
+          <button class="btn btn-primary" onclick="openVehicleModal()">＋ Add Vehicle</button>
+        </div>
+        <div class="card table-card">
+          <table class="tbl" id="vehiclesTable">
+            <thead><tr>
+              <th>Code</th><th>Plate</th><th>Type</th><th>Capacity</th>
+              <th>Assigned Collector</th><th>Status</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="vehiclesTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ──────── ROUTES ──────── -->
+      <section id="sec-routes" class="section">
+        <div class="toolbar">
+          <h3 style="margin:0;color:#2d3436">Route Assignments</h3>
+          <button class="btn btn-primary" onclick="openRouteModal()">＋ Create Route</button>
+        </div>
+        <div class="route-grid" id="routeGrid"></div>
+      </section>
+
+      <!-- ──────── LIVE TRACKING ──────── -->
+      <section id="sec-tracking" class="section">
+        <div class="card">
+          <div class="card-hd">
+            <h3>Live Collector Tracking</h3>
+            <div class="live-pill">🔴 LIVE</div>
+          </div>
+          <div class="chip-row" id="trackerChips"></div>
+          <div id="trackingMap" style="height:460px;border-radius:10px;margin-top:14px;"></div>
+        </div>
+      </section>
+
+      <!-- ──────── REPORTS ──────── -->
+      <section id="sec-reports" class="section">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-hd"><h3>Collector Performance</h3><span class="pill blue">July 2025</span></div>
+            <canvas id="perfChart" height="200"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-hd"><h3>Waste Composition</h3><span class="pill green">Today</span></div>
+            <canvas id="wasteChart" height="200"></canvas>
+          </div>
+        </div>
+        <div class="card" style="margin-top:20px">
+          <div class="card-hd"><h3>Detailed Report</h3>
+            <button class="btn btn-sm" onclick="exportReport()">⬇ Export CSV</button>
+          </div>
+          <table class="tbl">
+            <thead><tr>
+              <th>Collector</th><th>Assigned</th><th>Collected</th>
+              <th>Rate %</th><th>Seg %</th><th>Rating</th><th>Grade</th>
+            </tr></thead>
+            <tbody id="reportTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ──────── SALARY ──────── -->
+      <section id="sec-salary" class="section">
+        <div class="toolbar">
+          <h3 style="margin:0">Salary — July 2025</h3>
+          <button class="btn btn-primary" onclick="calculateAllSalaries()">⚡ Calculate All Salaries</button>
+        </div>
+        <div class="salary-formula card" style="margin-bottom:20px">
+          <strong>Formula:</strong> Base + Collection Bonus + Segregation Bonus + Attendance + Rating − Penalty
+        </div>
+        <div class="card table-card">
+          <table class="tbl">
+            <thead><tr>
+              <th>Collector</th><th>Base</th><th>Collection</th><th>Segregation</th>
+              <th>Attendance</th><th>Rating</th><th>Penalty</th><th>Total</th><th>Status</th>
+            </tr></thead>
+            <tbody id="salaryTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ──────── COMPLAINTS ──────── -->
+      <section id="sec-complaints" class="section">
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="filterComplaints('all',this)">All</button>
+          <button class="filter-btn" onclick="filterComplaints('open',this)">Open</button>
+          <button class="filter-btn" onclick="filterComplaints('in_progress',this)">In Progress</button>
+          <button class="filter-btn" onclick="filterComplaints('resolved',this)">Resolved</button>
+        </div>
+        <div id="complaintsList" class="complaints-list"></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL ═══════════════ -->
+<div id="modalOverlay" class="modal-overlay" style="display:none" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-hd">
+      <h3 id="modalTitle">—</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ TOAST ═══════════════ -->
+<div id="toast" class="toast"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="IV_Admin.js"></script>
 </body>
-
 </html>
