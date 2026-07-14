@@ -1,47 +1,214 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Collector Dashboard</title>
-    <link rel="stylesheet" href="collector.css">
-
-    <!-- Leaflet.js CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a2f1e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>SmartWaste — Collector</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <link rel="stylesheet" href="IV_Collector.css">
 </head>
-
 <body>
-    <div class="dashboard">
-        <h2>Collector Dashboard</h2>
 
-        <!-- Stats -->
-        <div class="stats">
-            <p><strong>Total Households:</strong> <span id="total"></span></p>
-            <p><strong>Completed:</strong> <span id="completed">0</span></p>
-            <p><strong>Pending:</strong> <span id="pending">0</span></p>
-            <p><strong>Not Available:</strong> <span id="notavailable">0</span></p>
-            <div class="progress-bar">
-                <div id="progress"></div>
-            </div>
-        </div>
+<!-- ══ LOGIN ══ -->
+<div id="loginScreen" class="login-wrap">
+  <div class="login-top">
+    <div class="login-icon">♻️</div>
+    <h1>SmartWaste</h1>
+    <p>Collector App</p>
+  </div>
+  <div class="login-form">
+    <div class="fg"><label>Phone Number</label>
+      <input id="lPhone" type="tel" maxlength="10" placeholder="Enter 10-digit number" value="9876543210"></div>
+    <div class="fg"><label>Password</label>
+      <input id="lPass" type="password" placeholder="Enter password" value="ravi123"></div>
+    <div id="lErr" class="lerr" style="display:none"></div>
+    <button class="btn-main" onclick="handleLogin()">Sign In →</button>
+    <p class="login-hint">Demo: 9876543210 / ravi123</p>
+  </div>
+</div>
 
-        <!-- Household Button -->
-        <button onclick="toggleHouseholds()" class="toggle-btn">Show Households</button>
+<!-- ══ APP ══ -->
+<div id="app" class="app-wrap" style="display:none">
 
-        <!-- Household List -->
-        <div id="householdList" class="hidden">
-            <ul id="households"></ul>
-        </div>
-
-        <!-- Map -->
-        <h3>Live Tracking Map</h3>
-        <div id="map"></div>
+  <!-- TOPBAR -->
+  <header class="topbar" id="topbar">
+    <div class="tb-left">
+      <div id="tbGreet" class="tb-greet">Good morning 👋</div>
+      <div id="tbName"  class="tb-name">Ravi Kumar</div>
     </div>
+    <div class="tb-right">
+      <div class="sync-dot" id="syncDot" title="Online"></div>
+      <button class="notif-btn" onclick="showScreen('alerts')">🔔<span class="notif-badge" id="notifBadge" style="display:none">2</span></button>
+    </div>
+  </header>
 
-    <!-- Leaflet.js -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="collector.js"></script>
+  <!-- DUTY BANNER -->
+  <div id="dutyBanner" class="duty-off">
+    <span id="dutyLabel">⏸ Duty Not Started</span>
+    <button id="dutyBtn" class="duty-toggle" onclick="toggleDuty()">Start Duty</button>
+  </div>
+
+  <!-- SCREENS -->
+  <main class="screens" id="screens">
+
+    <!-- HOME -->
+    <section id="sc-home" class="sc active">
+      <div class="progress-ring-card">
+        <svg class="ring-svg" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" class="ring-bg"/>
+          <circle cx="60" cy="60" r="50" class="ring-fill" id="ringFill"/>
+          <text x="60" y="55" class="ring-pct" id="ringPct">0%</text>
+          <text x="60" y="72" class="ring-sub">collected</text>
+        </svg>
+        <div class="ring-stats">
+          <div class="rs-item green"><div id="rsDone" class="rs-val">0</div><div class="rs-lbl">Done</div></div>
+          <div class="rs-item orange"><div id="rsPend" class="rs-val">0</div><div class="rs-lbl">Pending</div></div>
+          <div class="rs-item red"><div id="rsNA"   class="rs-val">0</div><div class="rs-lbl">N/A</div></div>
+        </div>
+      </div>
+
+      <div class="home-cards">
+        <div class="hc" onclick="showScreen('route')">
+          <div class="hc-icon">🗂️</div>
+          <div class="hc-body"><div class="hc-title">My Route</div><div class="hc-sub" id="routeSubtitle">—</div></div>
+          <div class="hc-arrow">›</div>
+        </div>
+        <div class="hc" onclick="showScreen('map')">
+          <div class="hc-icon">📍</div>
+          <div class="hc-body"><div class="hc-title">Live Map</div><div class="hc-sub">GPS tracking active</div></div>
+          <div class="hc-arrow">›</div>
+        </div>
+        <div class="hc" onclick="showScreen('stats')">
+          <div class="hc-icon">📊</div>
+          <div class="hc-body"><div class="hc-title">My Performance</div><div class="hc-sub">July 2025 stats</div></div>
+          <div class="hc-arrow">›</div>
+        </div>
+        <div class="hc" onclick="showScreen('alerts')">
+          <div class="hc-icon">🔔</div>
+          <div class="hc-body"><div class="hc-title">Alerts</div><div class="hc-sub">2 new notifications</div></div>
+          <div class="hc-arrow">›</div>
+        </div>
+      </div>
+
+      <div class="section-title">Today's Activity</div>
+      <ul class="feed" id="actFeed"></ul>
+    </section>
+
+    <!-- ROUTE -->
+    <section id="sc-route" class="sc">
+      <div class="route-hdr">
+        <div class="route-name" id="routeNameLabel">Zone A — North Circuit</div>
+        <div class="route-meta-row">
+          <span>📅 Mon / Thu</span>
+          <span>🚛 V-101</span>
+          <span>🏠 <span id="routeTotalLabel">20</span> houses</span>
+        </div>
+      </div>
+      <div class="filter-tabs">
+        <button class="ftab active" onclick="filterRoute('all',this)">All</button>
+        <button class="ftab" onclick="filterRoute('pending',this)">Pending</button>
+        <button class="ftab" onclick="filterRoute('collected',this)">Done</button>
+        <button class="ftab" onclick="filterRoute('not_available',this)">N/A</button>
+      </div>
+      <div id="houseList" class="house-list"></div>
+    </section>
+
+    <!-- MAP -->
+    <section id="sc-map" class="sc">
+      <div class="map-info-bar">
+        <span id="gpsStatus" class="gps-off">📡 GPS Off</span>
+        <span id="gpsCoords" class="gps-coords">—</span>
+      </div>
+      <div id="collectorMap" style="height:calc(100vh - 220px);width:100%;border-radius:0"></div>
+      <div class="map-legend">
+        <span><span class="leg green"></span> Me</span>
+        <span><span class="leg blue"></span> Pending</span>
+        <span><span class="leg gray"></span> Done</span>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section id="sc-stats" class="sc">
+      <div class="stats-month">July 2025</div>
+      <div class="kpi-grid">
+        <div class="kpi" style="--kc:#2ecc71"><div class="kpi-val" id="kpiRate">95%</div><div class="kpi-lbl">Collection Rate</div></div>
+        <div class="kpi" style="--kc:#0984e3"><div class="kpi-val" id="kpiSeg">92%</div><div class="kpi-lbl">Segregation</div></div>
+        <div class="kpi" style="--kc:#a29bfe"><div class="kpi-val" id="kpiRating">4.8 ⭐</div><div class="kpi-lbl">Citizen Rating</div></div>
+        <div class="kpi" style="--kc:#fdcb6e"><div class="kpi-val" id="kpiAtt">100%</div><div class="kpi-lbl">Attendance</div></div>
+      </div>
+      <div class="salary-preview">
+        <div class="sp-title">💰 Estimated Salary — July 2025</div>
+        <div class="sp-rows">
+          <div class="sp-row"><span>Base Salary</span><span>₹12,000</span></div>
+          <div class="sp-row green"><span>Collection Bonus</span><span>+₹2,940</span></div>
+          <div class="sp-row green"><span>Segregation Bonus</span><span>+₹2,375</span></div>
+          <div class="sp-row green"><span>Attendance Bonus</span><span>+₹2,400</span></div>
+          <div class="sp-row green"><span>Citizen Rating</span><span>+₹1,440</span></div>
+          <div class="sp-row red"><span>Penalty</span><span>−₹0</span></div>
+          <div class="sp-divider"></div>
+          <div class="sp-row total"><span>Total</span><span>₹21,155</span></div>
+        </div>
+      </div>
+      <div class="section-title">Feedback Received</div>
+      <div class="feedback-cards" id="feedbackCards"></div>
+    </section>
+
+    <!-- ALERTS -->
+    <section id="sc-alerts" class="sc">
+      <div class="section-title">Notifications</div>
+      <div id="alertsList" class="alerts-list"></div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="bn active" id="bn-home"   onclick="showScreen('home')">  <span>🏠</span><span>Home</span>  </button>
+    <button class="bn"        id="bn-route"  onclick="showScreen('route')"> <span>🗂️</span><span>Route</span> </button>
+    <button class="bn"        id="bn-map"    onclick="showScreen('map')">   <span>📍</span><span>Map</span>   </button>
+    <button class="bn"        id="bn-stats"  onclick="showScreen('stats')"> <span>📊</span><span>Stats</span> </button>
+  </nav>
+</div>
+
+<!-- ══ COLLECTION MODAL ══ -->
+<div id="collectModal" class="modal-wrap" style="display:none">
+  <div class="modal-sheet">
+    <div class="modal-drag"></div>
+    <div id="collectContent"></div>
+  </div>
+</div>
+
+<!-- ══ REPORT MODAL ══ -->
+<div id="reportModal" class="modal-wrap" style="display:none">
+  <div class="modal-sheet">
+    <div class="modal-drag"></div>
+    <h3 style="margin-bottom:16px">📋 Report Issue</h3>
+    <div class="fg"><label>House</label><input id="repHouse" type="text" readonly></div>
+    <div class="fg"><label>Issue Type</label>
+      <select id="repType">
+        <option>Resident Refused</option>
+        <option>Gate Locked</option>
+        <option>Unsafe Access</option>
+        <option>Waste Not Ready</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="fg"><label>Remarks</label><textarea id="repNote" rows="3" placeholder="Describe the issue…"></textarea></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn-ghost" onclick="closeReportModal()">Cancel</button>
+      <button class="btn-main" onclick="submitReport()">Submit Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="toast" class="toast"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="IV_Collector.js"></script>
 </body>
-
 </html>
