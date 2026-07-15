@@ -1,84 +1,288 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Smart Collector Dashboard</title>
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0d6e6e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>SmartWaste — Resident App</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <link rel="stylesheet" href="IV_HouseHolds.css">
 </head>
-
 <body>
-    <div class="container">
-        <nav class="sidebar">
-            <h2>HouseHold</h2>
-            <ul>
-                <li onclick="showSection('map')">Map</li>
-                <li onclick="showSection('feedback')">Feedback</li>
-                <li onclick="showSection('report')">Report</li>
-                <li onclick="showSection('scan')">Scan</li>
-                <li onclick="showSection('emergency')">Emergency</li>
-                <li onclick="showSection('garbage')">Garbage</li>
-            </ul>
-        </nav>
 
-        <main class="content">
-            <div id="map" class="section hidden">
-                <h3>Live Map</h3>
-                <div id="mapArea"></div>
-                <P>[ When the HouseHold give the status like picked up or not this will be shown automatically in the map ]</P>
-            </div>
-
-            <div id="feedback" class="section hidden">
-                <h3>Feedback</h3>
-                <label>Name:</label>
-                <input id="feedbackName" type="text" />
-                <label>Mobile:</label>
-                <input id="feedbackPhone" type="text" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
-                <label>Collector Behaviour:</label>
-                <select id="collectorBehaviour">
-                    <option value="Excellent">Excellent</option>
-                    <option value="Good">Good</option>
-                    <option value="Bad">Bad</option>
-                </select>
-                <button onclick="submitFeedback()">Submit Feedback</button>
-            </div>
-
-            <div id="report" class="section hidden">
-                <h3>Report</h3>
-                <label>Name:</label>
-                <input id="reportName" type="text" />
-                <label>Address:</label>
-                <input id="reportAddress" type="text" />
-                <label>Comments:</label>
-                <textarea id="reportComments" rows="4" oninput="limitWords(this, 200)"></textarea>
-                <button onclick="submitReport()">Submit Report</button>
-            </div>
-
-            <div id="scan" class="section hidden">
-                <h3>Waste Scanner</h3>
-                <button onclick="scanObject()">Start Scan</button>
-                <p id="scanResult"></p>
-                <p>[ Here we will Attach the image processing scanner to segrate the garbages ]</p>
-            </div>
-
-            <div id="emergency" class="section hidden">
-                <h3>Emergency Pickup</h3>
-                <button onclick="emergencyCall()">📞 Call Admin</button>
-
-            </div>
-
-            <div id="garbage" class="section hidden">
-                <h3>Garbage Pickup</h3>
-                <button id="pickedBtn" onclick="garbageClicked('picked')">Picked Up</button>
-                <button id="notPickedBtn" onclick="garbageClicked('notPicked')">Not Picked Up</button>
-            </div>
-        </main>
+<!-- ══ LOGIN ══ -->
+<div id="loginScreen" class="login-wrap">
+  <div class="login-hero">
+    <div class="hero-blob"></div>
+    <div class="login-logo-wrap">
+      <div class="login-logo">🏠</div>
+      <h1>SmartWaste</h1>
+      <p>Resident Portal</p>
     </div>
+  </div>
+  <div class="login-card">
+    <h2>Welcome Back</h2>
+    <p class="login-sub">Sign in to track your waste collection</p>
+    <div class="fg"><label>Mobile Number</label>
+      <input id="lPhone" type="tel" maxlength="10" placeholder="10-digit number" value="9001122334"></div>
+    <div class="fg"><label>Password</label>
+      <input id="lPass" type="password" placeholder="Your password" value="house123"></div>
+    <div id="lErr" class="lerr" style="display:none"></div>
+    <button class="btn-primary" onclick="handleLogin()">Sign In</button>
+    <p class="demo-hint">Demo: 9001122334 / house123</p>
+  </div>
+</div>
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="dashboard.js"></script>
+<!-- ══ APP ══ -->
+<div id="app" class="app-wrap" style="display:none">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="hdr-left">
+      <div class="hdr-avatar">JD</div>
+      <div>
+        <div class="hdr-name">John Doe</div>
+        <div class="hdr-addr">12 Main Street, Zone A</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div class="net-dot" id="netDot"></div>
+      <button class="icon-btn" onclick="showScreen('notifications')">🔔
+        <span class="notif-badge" id="notifBadge">3</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- COLLECTOR NEARBY BANNER -->
+  <div id="nearbyBanner" class="nearby-banner" style="display:none">
+    <span class="nearby-pulse"></span>
+    <span id="nearbyText">🚛 Collector is 320m away · ETA 4 min</span>
+    <button onclick="showScreen('track')">Track →</button>
+  </div>
+
+  <!-- SCREENS -->
+  <main class="screens">
+
+    <!-- HOME -->
+    <section id="sc-home" class="sc active">
+
+      <!-- Today's Status Card -->
+      <div class="status-card" id="statusCard">
+        <div class="sc-top">
+          <div>
+            <div class="sc-label">Today's Pickup</div>
+            <div class="sc-status" id="pickupStatusLabel">Scheduled</div>
+          </div>
+          <div class="sc-icon-wrap" id="statusIcon">⏳</div>
+        </div>
+        <div class="sc-date" id="pickupDate"></div>
+        <div class="sc-actions">
+          <button class="sc-btn picked"    onclick="markGarbage('picked')"    id="btnPicked">✅ Picked Up</button>
+          <button class="sc-btn notpicked" onclick="markGarbage('not_picked')" id="btnNotPicked">❌ Not Picked</button>
+        </div>
+      </div>
+
+      <!-- Compliance Ring -->
+      <div class="compliance-row">
+        <div class="comp-card">
+          <svg viewBox="0 0 80 80" class="comp-ring">
+            <circle cx="40" cy="40" r="32" class="cr-bg"/>
+            <circle cx="40" cy="40" r="32" class="cr-fill" id="compRingFill"/>
+            <text x="40" y="44" class="cr-text" id="compPct">87%</text>
+          </svg>
+          <div class="comp-label">Segregation<br>Score</div>
+        </div>
+        <div class="comp-stats">
+          <div class="cstat"><div class="cstat-val green">24</div><div class="cstat-lbl">Collections this month</div></div>
+          <div class="cstat"><div class="cstat-val blue">21</div><div class="cstat-lbl">Proper segregation</div></div>
+          <div class="cstat"><div class="cstat-val orange">3</div><div class="cstat-lbl">Mixed waste alerts</div></div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="section-title">Quick Actions</div>
+      <div class="qa-grid">
+        <div class="qa-item" onclick="showScreen('track')">
+          <div class="qa-icon" style="background:#e3f6f5">📍</div>
+          <div class="qa-lbl">Track Collector</div>
+        </div>
+        <div class="qa-item" onclick="openFeedbackModal()">
+          <div class="qa-icon" style="background:#fff3e0">⭐</div>
+          <div class="qa-lbl">Give Feedback</div>
+        </div>
+        <div class="qa-item" onclick="showScreen('complaints')">
+          <div class="qa-icon" style="background:#fce4e4">🚨</div>
+          <div class="qa-lbl">File Complaint</div>
+        </div>
+        <div class="qa-item" onclick="showScreen('guide')">
+          <div class="qa-icon" style="background:#e8f5e9">♻️</div>
+          <div class="qa-lbl">Waste Guide</div>
+        </div>
+        <div class="qa-item" onclick="showScreen('history')">
+          <div class="qa-icon" style="background:#ede7f6">📋</div>
+          <div class="qa-lbl">History</div>
+        </div>
+        <div class="qa-item" onclick="emergencyCall()">
+          <div class="qa-icon" style="background:#fce4e4">📞</div>
+          <div class="qa-lbl">Emergency</div>
+        </div>
+      </div>
+
+      <!-- Notifications preview -->
+      <div class="section-title">Recent Updates</div>
+      <div class="notif-preview" id="notifPreview"></div>
+
+    </section>
+
+    <!-- TRACK -->
+    <section id="sc-track" class="sc">
+      <div class="collector-info-card" id="collectorInfoCard">
+        <div class="cic-avatar">RK</div>
+        <div class="cic-body">
+          <div class="cic-name">Ravi Kumar <span class="live-chip">🔴 LIVE</span></div>
+          <div class="cic-zone">Zone A · EMP-001 · ⭐ 4.8</div>
+        </div>
+        <div class="cic-eta">
+          <div class="eta-val" id="etaVal">4</div>
+          <div class="eta-lbl">min away</div>
+        </div>
+      </div>
+      <div class="dist-bar">
+        <span id="distLabel">🚛 320 m away from your house</span>
+        <span id="houseCount">🏠 7 houses before yours</span>
+      </div>
+      <div id="trackMap" style="height: calc(100vh - 310px); width:100%"></div>
+    </section>
+
+    <!-- HISTORY -->
+    <section id="sc-history" class="sc">
+      <div class="section-title">Monthly Compliance</div>
+      <div class="compliance-chart-card">
+        <canvas id="compChart" height="130"></canvas>
+      </div>
+      <div class="section-title" style="margin-top:18px">Collection History</div>
+      <div id="historyList" class="history-list"></div>
+    </section>
+
+    <!-- COMPLAINTS -->
+    <section id="sc-complaints" class="sc">
+      <div class="toolbar-row">
+        <div class="filter-tabs">
+          <button class="ftab active" onclick="filterComplaints('all',this)">All</button>
+          <button class="ftab" onclick="filterComplaints('open',this)">Open</button>
+          <button class="ftab" onclick="filterComplaints('resolved',this)">Resolved</button>
+        </div>
+        <button class="btn-primary btn-sm" onclick="openComplaintModal()">+ New</button>
+      </div>
+      <div id="complaintList" class="complaint-list"></div>
+    </section>
+
+    <!-- GUIDE -->
+    <section id="sc-guide" class="sc">
+      <div class="guide-hero">
+        <h2>Waste Segregation Guide</h2>
+        <p>Separate your waste properly for a cleaner city 🌱</p>
+      </div>
+      <div class="guide-cards" id="guideCards"></div>
+    </section>
+
+    <!-- NOTIFICATIONS -->
+    <section id="sc-notifications" class="sc">
+      <div class="section-title">All Notifications</div>
+      <div id="notifList" class="notif-list"></div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="bn active" id="bn-home"         onclick="showScreen('home')">         <span>🏠</span><span>Home</span>         </button>
+    <button class="bn"        id="bn-track"        onclick="showScreen('track')">        <span>📍</span><span>Track</span>        </button>
+    <button class="bn"        id="bn-history"      onclick="showScreen('history')">      <span>📋</span><span>History</span>      </button>
+    <button class="bn"        id="bn-complaints"   onclick="showScreen('complaints')">   <span>🚨</span><span>Complaints</span>   </button>
+    <button class="bn"        id="bn-guide"        onclick="showScreen('guide')">        <span>♻️</span><span>Guide</span>        </button>
+  </nav>
+
+</div>
+
+<!-- ══ FEEDBACK MODAL ══ -->
+<div id="feedbackModal" class="modal-overlay" style="display:none">
+  <div class="modal-sheet">
+    <div class="drag-handle"></div>
+    <h3>⭐ Rate Today's Collection</h3>
+    <p class="modal-sub">How was Ravi Kumar's service today?</p>
+    <div class="star-row" id="starRow">
+      <span class="star" onclick="setStar(1)">★</span>
+      <span class="star" onclick="setStar(2)">★</span>
+      <span class="star" onclick="setStar(3)">★</span>
+      <span class="star" onclick="setStar(4)">★</span>
+      <span class="star" onclick="setStar(5)">★</span>
+    </div>
+    <div class="quick-ratings">
+      <button class="qr-btn" onclick="toggleQR(this)">😊 Polite</button>
+      <button class="qr-btn" onclick="toggleQR(this)">⏰ On Time</button>
+      <button class="qr-btn" onclick="toggleQR(this)">🧹 Clean</button>
+      <button class="qr-btn" onclick="toggleQR(this)">⚠️ Rude</button>
+      <button class="qr-btn" onclick="toggleQR(this)">🐢 Late</button>
+    </div>
+    <div class="fg" style="margin-top:12px">
+      <label>Comments (optional)</label>
+      <textarea id="fbComment" rows="2" placeholder="Tell us more…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeFeedbackModal()">Cancel</button>
+      <button class="btn-primary" onclick="submitFeedback()">Submit Feedback</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ COMPLAINT MODAL ══ -->
+<div id="complaintModal" class="modal-overlay" style="display:none">
+  <div class="modal-sheet">
+    <div class="drag-handle"></div>
+    <h3>🚨 File a Complaint</h3>
+    <div class="fg"><label>Issue Type</label>
+      <select id="cmpType">
+        <option>Garbage not collected</option>
+        <option>Collector missed my house</option>
+        <option>Rude behaviour</option>
+        <option>Waste spilled on road</option>
+        <option>Collection too early/late</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="fg"><label>Priority</label>
+      <div class="priority-btns">
+        <button class="pri-btn active" onclick="setPriority('Low',this)">🟢 Low</button>
+        <button class="pri-btn" onclick="setPriority('Medium',this)">🟡 Medium</button>
+        <button class="pri-btn" onclick="setPriority('High',this)">🔴 High</button>
+      </div>
+    </div>
+    <div class="fg"><label>Description</label>
+      <textarea id="cmpDesc" rows="3" placeholder="Describe the issue in detail…"></textarea>
+    </div>
+    <div class="fg">
+      <label>Attach Photo (optional)</label>
+      <div class="photo-picker" onclick="triggerComplaintPhoto()">
+        <span>📷</span> <span>Tap to attach photo</span>
+        <input type="file" id="cmpPhoto" accept="image/*" style="display:none" onchange="previewComplaintPhoto(event)">
+      </div>
+      <img id="cmpPhotoPreview" style="display:none;width:100%;border-radius:10px;margin-top:8px;max-height:120px;object-fit:cover">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeComplaintModal()">Cancel</button>
+      <button class="btn-primary" onclick="submitComplaint()">Submit Complaint</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="toast" class="toast"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="IV_HouseHolds.js"></script>
 </body>
-
 </html>
