@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+
+  ai-service:
+    build: .
+    container_name: swm-ai
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_PATH=models/yolov8_waste.pt
+      - CONF_THRESHOLD=0.45
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/smart_waste_db
+      - LOG_LEVEL=info
+    volumes:
+      - ./models:/app/models:ro
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - swm-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: swm-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - swm-net
+
+networks:
+  swm-net:
+    driver: bridge

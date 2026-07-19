@@ -1,0 +1,30 @@
+# SmartWaste AI Service — Python Dependencies
+
+# ── Web framework ─────────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+python-multipart==0.0.9      # file uploads
+pydantic==2.7.4
+
+# ── AI / ML ───────────────────────────────────────────────────
+ultralytics==8.2.48          # YOLOv8
+torch==2.3.1                 # PyTorch (CPU build)
+torchvision==0.18.1
+opencv-python-headless==4.10.0.84
+Pillow==10.3.0
+numpy==1.26.4
+
+# ── Database ──────────────────────────────────────────────────
+asyncpg==0.29.0              # async PostgreSQL
+sqlalchemy[asyncio]==2.0.31
+
+# ── Storage ───────────────────────────────────────────────────
+boto3==1.34.131              # AWS S3
+
+# ── Caching / Queue ───────────────────────────────────────────
+redis==5.0.6
+aioredis==2.0.1
+
+# ── Utilities ─────────────────────────────────────────────────
+python-dotenv==1.0.1
+httpx==0.27.0                # async HTTP client
