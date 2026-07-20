@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartWaste — Warehouse Management</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600&display=swap');
+:root{--bg:#f0f4f8;--card:#fff;--dark:#1a2535;--accent:#00b894;--blue:#0984e3;
+  --orange:#e17055;--purple:#6c5ce7;--red:#d63031;--border:#e5e9f0;--muted:#7f8c9a;--radius:14px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;
+  background:var(--dark);color:#fff}
+.tb-brand{font-size:18px;font-weight:800}
+.tb-brand span{color:var(--accent)}
+.page{max-width:1200px;margin:0 auto;padding:24px}
+.section-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:12px}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;margin-bottom:24px}
+.kpi{background:var(--card);border-radius:var(--radius);padding:16px;
+  box-shadow:0 2px 12px rgba(0,0,0,.06);border-top:3px solid var(--kc,#00b894)}
+.kv{font-size:26px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--kc,#00b894)}
+.kl{font-size:12px;color:var(--muted);margin-top:4px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.card{background:var(--card);border-radius:var(--radius);padding:18px;
+  box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:18px}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-hd h3{font-size:14px;font-weight:700}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+/* Entry Form */
+.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr 1fr}}
+.fg label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px}
+.fg input,.fg select{width:100%;padding:10px 12px;border:1.5px solid var(--border);
+  border-radius:8px;font-size:14px;font-family:inherit}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent)}
+.btn-primary{padding:11px 22px;background:linear-gradient(135deg,var(--accent),#00967a);
+  color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-ghost{padding:10px 18px;background:#fff;border:1.5px solid var(--border);
+  border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+/* Table */
+.tbl-wrap{overflow:auto}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{background:#f7f9fb;text-align:left;padding:10px 14px;font-size:11px;font-weight:700;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border)}
+.tbl td{padding:11px 14px;font-size:13px;border-bottom:1px solid var(--border)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#fafbfc}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+/* Waste bars */
+.waste-bars{display:flex;flex-direction:column;gap:10px}
+.wb-row{display:flex;align-items:center;gap:10px}
+.wb-lbl{width:70px;font-size:12px;font-weight:700;color:var(--muted)}
+.wb-track{flex:1;background:var(--border);border-radius:4px;height:10px}
+.wb-fill{height:100%;border-radius:4px;transition:width .8s ease}
+.wb-val{width:50px;text-align:right;font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace}
+/* Revenue card */
+.rev-big{font-size:36px;font-weight:800;color:var(--accent);font-family:'JetBrains Mono',monospace;margin:10px 0}
+.rev-rows{display:flex;flex-direction:column;gap:8px;font-size:13px}
+.rev-row{display:flex;justify-content:space-between}
+.rev-row.total{font-weight:800;font-size:15px;border-top:1px dashed var(--border);padding-top:8px;margin-top:2px}
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--dark);color:#fff;
+  padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:99;
+  transform:translateY(20px);opacity:0;transition:all .3s;border-left:3px solid var(--accent)}
+.toast.show{transform:none;opacity:1}
+.badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-green{background:rgba(0,184,148,.12);color:#00967a}
+.badge-blue{background:rgba(9,132,227,.12);color:var(--blue)}
+.total-row td{font-weight:800;background:#f7f9fb;font-family:'JetBrains Mono',monospace}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-brand">♻️ Smart<span>Waste</span> — Warehouse</div>
+  <span style="font-size:13px;opacity:.6" id="todayLabel"></span>
+</div>
+
+<div class="page">
+
+  <!-- KPIs -->
+  <div class="section-title">Today's Summary</div>
+  <div class="kpi-row">
+    <div class="kpi" style="--kc:#00b894"><div class="kv" id="kTotalKg">0</div><div class="kl">Total Waste (kg)</div></div>
+    <div class="kpi" style="--kc:#0984e3"><div class="kv" id="kTrips">0</div><div class="kl">Vehicle Trips</div></div>
+    <div class="kpi" style="--kc:#6c5ce7"><div class="kv" id="kRecycled">0</div><div class="kl">Recycled (kg)</div></div>
+    <div class="kpi" style="--kc:#e17055"><div class="kv" id="kLandfill">0</div><div class="kl">Landfill (kg)</div></div>
+    <div class="kpi" style="--kc:#00b894"><div class="kv" id="kRevenue">₹0</div><div class="kl">Revenue Today</div></div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Log New Entry -->
+    <div class="card">
+      <div class="card-hd"><h3>📥 Log Incoming Waste</h3></div>
+      <div class="form-grid" style="margin-bottom:14px">
+        <div class="fg"><label>Vehicle</label>
+          <select id="fVehicle">
+            <option value="V-101">V-101 (TN33AB1234)</option>
+            <option value="V-102">V-102 (TN33CD5678)</option>
+            <option value="V-104">V-104 (TN33GH3456)</option>
+          </select>
+        </div>
+        <div class="fg"><label>Arrival Time</label><input type="time" id="fTime"></div>
+        <div class="fg"><label>Operator</label><input type="text" value="Warehouse Team A" id="fOp"></div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px">WASTE WEIGHTS (kg)</div>
+      <div class="form-grid">
+        <div class="fg"><label>🥕 Organic</label><input type="number" id="wOrganic" placeholder="0" min="0"></div>
+        <div class="fg"><label>🧴 Plastic</label><input type="number" id="wPlastic" placeholder="0" min="0"></div>
+        <div class="fg"><label>📄 Paper</label><input type="number" id="wPaper"   placeholder="0" min="0"></div>
+        <div class="fg"><label>🔩 Metal</label><input type="number" id="wMetal"   placeholder="0" min="0"></div>
+        <div class="fg"><label>🍶 Glass</label><input type="number" id="wGlass"   placeholder="0" min="0"></div>
+        <div class="fg"><label>💡 E-Waste</label><input type="number" id="wEwaste" placeholder="0" min="0"></div>
+        <div class="fg"><label>🗑️ Mixed</label><input type="number" id="wMixed"   placeholder="0" min="0"></div>
+        <div class="fg"><label>💰 Revenue (₹)</label><input type="number" id="wRevenue" placeholder="0" min="0"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn-ghost" onclick="clearForm()">Clear</button>
+        <button class="btn-primary" onclick="logEntry()">✅ Log Entry</button>
+      </div>
+    </div>
+
+    <!-- Waste Breakdown -->
+    <div class="card">
+      <div class="card-hd"><h3>📊 Composition Breakdown</h3><span id="totalKgBadge" class="badge badge-blue">0 kg total</span></div>
+      <div class="waste-bars" id="wasteBarsDisplay"></div>
+      <div style="margin-top:18px">
+        <canvas id="compChart" height="150"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Revenue Card -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-hd"><h3>💰 Revenue from Recycling</h3></div>
+      <div class="rev-big" id="revTotal">₹0</div>
+      <div class="rev-rows" id="revRows"></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><h3>📈 Monthly Trend</h3></div>
+      <canvas id="trendChart" height="180"></canvas>
+    </div>
+  </div>
+
+  <!-- Entries Table -->
+  <div class="card">
+    <div class="card-hd">
+      <h3>📋 Today's Entries</h3>
+      <button class="btn-ghost" style="font-size:12px" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr>
+          <th>Time</th><th>Vehicle</th><th>Organic</th><th>Plastic</th><th>Paper</th>
+          <th>Metal</th><th>Glass</th><th>E-Waste</th><th>Mixed</th><th>Total</th><th>Revenue</th>
+        </tr></thead>
+        <tbody id="entriesTable"></tbody>
+        <tfoot><tr id="totalsRow" class="total-row"></tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ══════════════════════════════════════
+   Warehouse Management — Phase 6 JS
+   ══════════════════════════════════════ */
+
+const RATES = { Organic:2, Plastic:8, Paper:5, Metal:18, Glass:4, 'E-Waste':25, Mixed:1 };
+const COLORS= { Organic:'#00b894', Plastic:'#0984e3', Paper:'#fdcb6e', Metal:'#6c5ce7', Glass:'#00cec9', 'E-Waste':'#e17055', Mixed:'#b2bec3' };
+
+let entries = [
+  { time:'08:20', vehicle:'V-101', Organic:120, Plastic:65, Paper:40, Metal:22, Glass:10, 'E-Waste':5, Mixed:8, revenue:2810 },
+  { time:'10:45', vehicle:'V-104', Organic:95,  Plastic:48, Paper:32, Metal:18, Glass:6,  'E-Waste':3, Mixed:5, revenue:2180 },
+  { time:'13:30', vehicle:'V-102', Organic:80,  Plastic:42, Paper:28, Metal:15, Glass:8,  'E-Waste':2, Mixed:4, revenue:1870 },
+];
+
+let compChart, trendChart;
+document.getElementById('todayLabel').textContent =
+  new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+document.getElementById('fTime').value = new Date().toTimeString().slice(0,5);
+
+function totalEntry(e) {
+  return e.Organic + e.Plastic + e.Paper + e.Metal + e.Glass + e['E-Waste'] + e.Mixed;
+}
+function calcRevenue(e) {
+  return Object.entries(RATES).reduce((s,[k,r]) => s + (e[k]||0)*r, 0);
+}
+
+function logEntry() {
+  const cats = ['Organic','Plastic','Paper','Metal','Glass','E-Waste','Mixed'];
+  const ids  = ['wOrganic','wPlastic','wPaper','wMetal','wGlass','wEwaste','wMixed'];
+  const entry = {
+    time:    document.getElementById('fTime').value,
+    vehicle: document.getElementById('fVehicle').value,
+  };
+  cats.forEach((c,i) => { entry[c] = parseFloat(document.getElementById(ids[i]).value)||0; });
+  entry.revenue = parseFloat(document.getElementById('wRevenue').value) || calcRevenue(entry);
+
+  if (totalEntry(entry) === 0) { showToast('Please enter at least one waste weight','red'); return; }
+  entries.push(entry);
+  renderAll();
+  clearForm();
+  showToast('✅ Entry logged successfully!');
+}
+
+function clearForm() {
+  ['wOrganic','wPlastic','wPaper','wMetal','wGlass','wEwaste','wMixed','wRevenue']
+    .forEach(id => { document.getElementById(id).value=''; });
+}
+
+function renderAll() {
+  renderKPIs();
+  renderWasteBars();
+  renderCompChart();
+  renderRevenue();
+  renderTrendChart();
+  renderTable();
+}
+
+function renderKPIs() {
+  const totals = { Organic:0,Plastic:0,Paper:0,Metal:0,Glass:0,'E-Waste':0,Mixed:0 };
+  let totalKg = 0, totalRev = 0;
+  entries.forEach(e => {
+    Object.keys(totals).forEach(k => totals[k] += e[k]||0);
+    totalKg  += totalEntry(e);
+    totalRev += e.revenue||0;
+  });
+  const recycled = totals.Plastic+totals.Paper+totals.Metal+totals.Glass+totals['E-Waste'];
+  animateNum('kTotalKg', totalKg);
+  animateNum('kTrips',   entries.length);
+  animateNum('kRecycled',Math.round(recycled));
+  animateNum('kLandfill',Math.round(totals.Organic+totals.Mixed));
+  document.getElementById('kRevenue').textContent = '₹'+Math.round(totalRev).toLocaleString();
+}
+
+function renderWasteBars() {
+  const totals = {};
+  entries.forEach(e => {
+    ['Organic','Plastic','Paper','Metal','Glass','E-Waste','Mixed'].forEach(k => {
+      totals[k] = (totals[k]||0)+(e[k]||0);
+    });
+  });
+  const max = Math.max(...Object.values(totals), 1);
+  const totalKg = Object.values(totals).reduce((a,b)=>a+b,0);
+  document.getElementById('totalKgBadge').textContent = Math.round(totalKg)+' kg total';
+  document.getElementById('wasteBarsDisplay').innerHTML = Object.entries(totals).map(([k,v]) => `
+    <div class="wb-row">
+      <div class="wb-lbl">${k}</div>
+      <div class="wb-track"><div class="wb-fill" style="width:${(v/max*100)}%;background:${COLORS[k]}"></div></div>
+      <div class="wb-val" style="color:${COLORS[k]}">${Math.round(v)} kg</div>
+    </div>`).join('');
+}
+
+function renderCompChart() {
+  const totals = {};
+  ['Organic','Plastic','Paper','Metal','Glass','E-Waste','Mixed'].forEach(k => {
+    totals[k] = entries.reduce((s,e) => s+(e[k]||0), 0);
+  });
+  const ctx = document.getElementById('compChart').getContext('2d');
+  if (compChart) compChart.destroy();
+  compChart = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels:Object.keys(totals), datasets:[{ data:Object.values(totals), backgroundColor:Object.values(COLORS), borderWidth:0 }] },
+    options:{ cutout:'55%', plugins:{ legend:{ position:'right', labels:{ font:{ size:11 }, color:'#7f8c9a', boxWidth:12 } } }, responsive:true, maintainAspectRatio:false }
+  });
+}
+
+function renderRevenue() {
+  const RATES_LABELS = { Plastic:'Plastic scrap', Paper:'Paper recycling', Metal:'Metal scrap', Glass:'Glass recycling', 'E-Waste':'E-waste processing' };
+  const totals = {};
+  entries.forEach(e => Object.keys(COLORS).forEach(k => { totals[k]=(totals[k]||0)+(e[k]||0); }));
+  let totalRev = 0;
+  const rows = Object.entries(RATES_LABELS).map(([k,lbl]) => {
+    const rev = Math.round((totals[k]||0)*RATES[k]);
+    totalRev += rev;
+    return `<div class="rev-row"><span>${lbl} (${Math.round(totals[k]||0)} kg × ₹${RATES[k]})</span><span style="font-weight:700;color:${COLORS[k]}">₹${rev.toLocaleString()}</span></div>`;
+  });
+  document.getElementById('revTotal').textContent  = '₹'+totalRev.toLocaleString();
+  document.getElementById('revRows').innerHTML = rows.join('') +
+    `<div class="rev-row total"><span>Total Revenue</span><span style="color:var(--accent)">₹${totalRev.toLocaleString()}</span></div>`;
+}
+
+function renderTrendChart() {
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels:['Week 1','Week 2','Week 3','Week 4'],
+      datasets:[
+        { label:'Organic', data:[480,510,490,520], backgroundColor:'rgba(0,184,148,.7)', borderRadius:4, stack:'s' },
+        { label:'Recyclable', data:[350,380,360,390], backgroundColor:'rgba(9,132,227,.7)', borderRadius:4, stack:'s' },
+        { label:'Mixed', data:[80,70,85,75], backgroundColor:'rgba(178,190,195,.7)', borderRadius:4, stack:'s' },
+      ]
+    },
+    options:{
+      scales:{
+        x:{stacked:true,grid:{color:'#f0f4f8'},ticks:{color:'#7f8c9a',font:{size:11}}},
+        y:{stacked:true,grid:{color:'#f0f4f8'},ticks:{color:'#7f8c9a',font:{size:11},callback:v=>v+' kg'}}
+      },
+      plugins:{legend:{position:'bottom',labels:{font:{size:11},color:'#7f8c9a',boxWidth:12}}},
+      responsive:true,maintainAspectRatio:false
+    }
+  });
+}
+
+function renderTable() {
+  const keys = ['Organic','Plastic','Paper','Metal','Glass','E-Waste','Mixed'];
+  const totals = {Organic:0,Plastic:0,Paper:0,Metal:0,Glass:0,'E-Waste':0,Mixed:0,total:0,revenue:0};
+  document.getElementById('entriesTable').innerHTML = entries.map(e => {
+    const tot = totalEntry(e); totals.total += tot; totals.revenue += e.revenue||0;
+    keys.forEach(k => { totals[k] += e[k]||0; });
+    return `<tr>
+      <td class="mono">${e.time}</td><td><strong>${e.vehicle}</strong></td>
+      ${keys.map(k=>`<td class="mono">${e[k]||0}</td>`).join('')}
+      <td class="mono" style="font-weight:700">${tot}</td>
+      <td class="mono" style="color:var(--accent);font-weight:700">₹${(e.revenue||0).toLocaleString()}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('totalsRow').innerHTML =
+    `<td>TOTAL</td><td></td>${keys.map(k=>`<td>${Math.round(totals[k])}</td>`).join('')}<td>${Math.round(totals.total)}</td><td style="color:var(--accent)">₹${Math.round(totals.revenue).toLocaleString()}</td>`;
+}
+
+function exportCSV() { showToast('📁 CSV exported to Downloads (demo)'); }
+
+function animateNum(id, target) {
+  const el = document.getElementById(id); let cur=0, step=Math.max(1,Math.ceil(target/40));
+  const t = setInterval(()=>{ cur=Math.min(cur+step,target); el.textContent=cur.toLocaleString(); if(cur>=target)clearInterval(t); },25);
+}
+
+let toastTimer;
+function showToast(msg,type='green'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.borderLeftColor=type==='red'?'var(--red)':'var(--accent)';
+  t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+renderAll();
+</script>
+</body>
+</html>

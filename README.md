@@ -1,147 +1,103 @@
-# 🗑️ Smart Waste Management System
+# ♻️ Smart Waste Management System
 
 > A Smart IoT and GPS-Enabled Waste Monitoring System with Real-Time Feedback and Automated Wage Allocation
 
 [![SIH 2025](https://img.shields.io/badge/Smart%20India%20Hackathon-2025-blue)](https://www.sih.gov.in/)
-[![Phase](https://img.shields.io/badge/Phase-1%20Complete-green)]()
+[![Phases](https://img.shields.io/badge/Phases-6%2F6%20Complete-brightgreen)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 ---
 
-## 📌 Project Overview
+## 🚀 Quick Start (No server needed for frontend)
 
-This system is a full-stack **Smart Waste Management Ecosystem** that integrates IoT, GPS tracking, AI-based waste detection, and automated performance-based wage calculation into a unified platform for urban local bodies (ULBs).
+```bash
+git clone https://github.com/Dakkshina/Smart-Waste-Management.git
+cd Smart-Waste-Management
 
----
+# Open any page directly in your browser:
+open frontend/admin/IV_Admin.html          # Admin Dashboard
+open frontend/collector/IV_Collector.html  # Collector PWA
+open frontend/households/IV_HouseHolds.html # Resident PWA
+open frontend/analytics/index.html         # Analytics Dashboard
+open frontend/warehouse/index.html         # Warehouse Management
+open frontend/ai-demo/index.html           # AI Classifier Demo
+```
 
-## 👥 Users / Roles
-
-| Role        | Description                                               |
-|-------------|-----------------------------------------------------------|
-| **Admin**   | Full control — manages collectors, routes, reports, wages |
-| **Collector** | Field worker — GPS tracked, scans QR, captures waste images |
-| **Household** | Resident — views pickup status, submits feedback & complaints |
-| **Warehouse** | Manages incoming waste, segregation, and recycling records |
-| **Authority** | Government oversight — reads reports and analytics |
-
----
-
-## 🏗️ System Modules
-
-| # | Module | Status |
-|---|--------|--------|
-| 1 | Admin Dashboard | ✅ UI Done |
-| 2 | Collector Mobile App | ✅ UI Done |
-| 3 | Household Resident App | ✅ UI Done |
-| 4 | AI Waste Detection (YOLOv8) | 🔲 Phase 5 |
-| 5 | GPS Live Tracking | ✅ UI Done |
-| 6 | Performance-Based Wage Calculation | 🔲 Phase 6 |
-| 7 | AI Analytics Dashboard | 🔲 Phase 5 |
-| 8 | Complaint Management | ✅ UI Done |
-| 9 | Warehouse Management | 🔲 Phase 6 |
+| App | Demo Login |
+|-----|-----------|
+| Admin | admin@smartwaste.in / admin123 |
+| Collector | 9876543210 / ravi123 |
+| Resident | 9001122334 / house123 |
 
 ---
 
-## 🗂️ Folder Structure
+## 📁 Project Structure
 
 ```
 Smart-Waste-Management/
 │
 ├── frontend/
-│   ├── admin/          → Admin Dashboard (HTML/CSS/JS)
-│   ├── collector/      → Collector App (HTML/CSS/JS)
-│   ├── households/     → Resident App (HTML/CSS/JS)
-│   └── main/           → Landing / Login Page
+│   ├── admin/          → Admin Dashboard (Phase 2)
+│   ├── collector/      → Collector PWA (Phase 3)
+│   ├── households/     → Resident PWA (Phase 4)
+│   ├── ai-demo/        → AI Classifier Demo (Phase 5)
+│   ├── analytics/      → Analytics Dashboard (Phase 6)
+│   └── warehouse/      → Warehouse Management (Phase 6)
 │
-├── backend/
-│   ├── routes/         → Express.js API routes
+├── backend/            → Node.js + Express API (Phase 2+)
 │   ├── controllers/    → Business logic
-│   ├── models/         → PostgreSQL models
-│   ├── middleware/     → Auth, RBAC, logging
-│   └── config/         → DB, env, cloud config
+│   ├── routes/         → Express routes
+│   ├── middleware/      → JWT auth + RBAC
+│   └── config/         → DB connection
 │
-├── ai-service/         → YOLOv8 FastAPI microservice
-├── database/
-│   └── migrations/     → SQL schema files
-├── deployment/         → Docker, Nginx configs
-├── docs/               → Architecture, API, DB docs
-└── .github/workflows/  → CI/CD pipelines
+├── ai-service/         → Python FastAPI YOLOv8 (Phase 5)
+│   ├── main.py         → 7 REST endpoints
+│   ├── classifier.py   → YOLOv8 + mock fallback
+│   └── utils.py        → Image preprocessing
+│
+├── docs/               → Architecture, DB schema, API design
+└── deployment/         → Docker, Nginx, deploy scripts
 ```
+
+---
+
+## 🏗️ All 6 Phases — Complete
+
+| Phase | Deliverable | Key Features |
+|-------|-------------|-------------|
+| **1** | Architecture + Docs | DB schema (25 tables), API design, UI/UX guidelines |
+| **2** | Admin Dashboard + Backend | 9-section dashboard, full CRUD API, WebSocket GPS |
+| **3** | Collector PWA | 4-step collection wizard, GPS, QR scan, offline sync |
+| **4** | Resident PWA | Live collector tracking, feedback, complaints, segregation guide |
+| **5** | AI Microservice | YOLOv8 FastAPI, 6 waste classes, interactive demo |
+| **6** | Analytics + Warehouse + Deploy | Charts, heatmaps, wage calculator, Docker stack |
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- HTML5 / CSS3 / JavaScript (current)
-- React.js (Admin Dashboard — Phase 2)
-- React Native (Collector & Resident Apps — Phase 3 & 4)
-
-### Backend
-- Node.js + Express.js
-- JWT Authentication + RBAC
-
-### Database
-- PostgreSQL (25 tables)
-
-### AI
-- YOLOv8 + OpenCV
-- Python FastAPI microservice
-- Dataset: TrashNet + TACO + Custom Indian Garbage Dataset
-
-### Maps & Location
-- Leaflet.js (current) → Google Maps API (Phase 2+)
-
-### Cloud & DevOps
-- AWS S3 (waste images)
-- Firebase Cloud Messaging (notifications)
-- Docker + GitHub Actions
-- Render / Railway / AWS EC2
+| Layer | Technology |
+|-------|-----------|
+| Frontend | HTML5, CSS3, Vanilla JS, Leaflet.js, Chart.js |
+| Backend | Node.js, Express.js, JWT, WebSocket |
+| Database | PostgreSQL (25 tables) |
+| AI | Python, FastAPI, YOLOv8 (ultralytics), OpenCV |
+| Deployment | Docker, Docker Compose, Nginx |
+| Maps | Leaflet.js (OpenStreetMap) |
+| PWA | Service Worker, Web Manifest |
 
 ---
 
-## 🚀 Development Phases
-
-| Phase | Scope | Status |
-|-------|-------|--------|
-| **Phase 1** | System Architecture, DB Schema, API Design, UI/UX | ✅ **Complete** |
-| **Phase 2** | Admin Dashboard — Auth, Collectors, Routes, GPS, Reports | 🔲 Pending |
-| **Phase 3** | Collector App — QR, GPS, Image Upload, Offline Sync | 🔲 Pending |
-| **Phase 4** | Resident App — Notifications, Feedback, Complaints | 🔲 Pending |
-| **Phase 5** | AI Microservice — YOLOv8 integration + Backend API | 🔲 Pending |
-| **Phase 6** | Wage Calc, Analytics, Warehouse, Deployment | 🔲 Pending |
-
----
-
-## 📄 Phase 1 Deliverables
-
-- 📐 [System Architecture](docs/ARCHITECTURE.md)
-- 🗄️ [Database Schema](docs/DATABASE_SCHEMA.sql)
-- 🔌 [API Design](docs/API_DESIGN.md)
-- 🎨 [UI/UX Guidelines](docs/UIUX_GUIDELINES.md)
-
----
-
-## ⚙️ Quick Start (Phase 1 — Frontend Preview)
+## 🐳 Full Stack Deployment
 
 ```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/Smart-Waste-Management.git
-cd Smart-Waste-Management
-
-# Open any frontend page directly in browser
-open frontend/main/IV_Mainpage.html
-open frontend/admin/IV_Admin.html
-open frontend/collector/IV_Collector.html
-open frontend/households/IV_HouseHolds.html
+cp deployment/.env.example deployment/.env
+# Fill in DB_PASSWORD and JWT_SECRET
+bash deployment/scripts/deploy.sh
 ```
 
----
-
-## 📜 License
-
-MIT License — see [LICENSE](LICENSE) for details.
+Services started: PostgreSQL · Redis · Node.js API · AI Service · Nginx
 
 ---
 
-> Built for **Smart India Hackathon (SIH)** — *Making India Cleaner, Smarter, Greener* 🇮🇳
+> Built for **Smart India Hackathon (SIH) 2025** 🇮🇳

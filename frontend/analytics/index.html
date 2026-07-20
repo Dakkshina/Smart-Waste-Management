@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartWaste — Analytics Dashboard</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+:root {
+  --bg:#0b0f1a; --card:#111827; --border:#1e2a3a; --accent:#10b981;
+  --blue:#3b82f6; --orange:#f59e0b; --red:#ef4444; --purple:#8b5cf6;
+  --teal:#06b6d4; --text:#f1f5f9; --muted:#64748b; --radius:14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── TOP BAR ─────────────────────────── */
+.topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 24px;background:var(--card);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:50}
+.tb-brand{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800}
+.tb-brand span{color:var(--accent)}
+.tb-right{display:flex;align-items:center;gap:12px}
+.date-range{display:flex;gap:6px}
+.dr-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);
+  background:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.dr-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.export-btn{padding:8px 16px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);
+  color:var(--accent);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.live-badge{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--accent)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── LAYOUT ──────────────────────────── */
+.page{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 57px)}
+
+/* ── SIDEBAR ─────────────────────────── */
+.sidebar{background:var(--card);border-right:1px solid var(--border);padding:16px 0;position:sticky;top:57px;height:calc(100vh - 57px);overflow-y:auto}
+.sb-section{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.8px;padding:16px 16px 6px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 16px;
+  cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;
+  transition:all .15s;border-left:3px solid transparent}
+.sb-item:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.sb-item.active{background:rgba(16,185,129,.1);color:var(--accent);border-left-color:var(--accent)}
+
+/* ── MAIN CONTENT ────────────────────── */
+.main-content{padding:22px;overflow-y:auto}
+.section{display:none}.section.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.section-hdr h2{font-size:20px;font-weight:800}
+
+/* ── KPI GRID ────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:22px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px;border-top:3px solid var(--kc,#10b981);transition:transform .15s}
+.kpi-card:hover{transform:translateY(-2px)}
+.kpi-val{font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--kc,#10b981)}
+.kpi-lbl{font-size:12px;color:var(--muted);margin-top:4px}
+.kpi-delta{font-size:11px;margin-top:6px;font-weight:700}
+.delta-up{color:var(--accent)}.delta-dn{color:var(--red)}
+
+/* ── CHART CARDS ─────────────────────── */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.chart-grid-3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:20px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.cc-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cc-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.cc-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.badge-green{background:rgba(16,185,129,.12);color:var(--accent)}
+.badge-blue {background:rgba(59,130,246,.12);color:var(--blue)}
+.badge-orange{background:rgba(245,158,11,.12);color:var(--orange)}
+@media(max-width:900px){.chart-grid,.chart-grid-3{grid-template-columns:1fr}}
+
+/* ── DATA TABLE ──────────────────────── */
+.data-table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{background:#0d1525;text-align:left;padding:11px 14px;font-size:11px;font-weight:700;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+.tbl td{padding:12px 14px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.pill{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.pill-green{background:rgba(16,185,129,.12);color:var(--accent)}
+.pill-orange{background:rgba(245,158,11,.12);color:var(--orange)}
+.pill-red{background:rgba(239,68,68,.12);color:var(--red)}
+.pill-blue{background:rgba(59,130,246,.12);color:var(--blue)}
+.rank-badge{width:24px;height:24px;border-radius:50%;display:inline-flex;
+  align-items:center;justify-content:center;font-size:11px;font-weight:800;
+  background:rgba(16,185,129,.15);color:var(--accent)}
+.rank-badge.gold{background:rgba(245,158,11,.2);color:var(--orange)}
+.rank-badge.silver{background:rgba(148,163,184,.15);color:#94a3b8}
+
+/* ── HEATMAP ─────────────────────────── */
+.heatmap-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
+.hm-day{aspect-ratio:1;border-radius:4px;background:var(--border);cursor:pointer;transition:transform .1s}
+.hm-day:hover{transform:scale(1.2);z-index:1;position:relative}
+.hm-labels{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;
+  font-size:10px;color:var(--muted);text-align:center}
+
+/* ── ALERT LIST ──────────────────────── */
+.alert-list{display:flex;flex-direction:column;gap:10px}
+.alert-item{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;display:flex;align-items:flex-start;gap:12px}
+.alert-item.high{border-left:3px solid var(--red)}
+.alert-item.medium{border-left:3px solid var(--orange)}
+.alert-item.low{border-left:3px solid var(--accent)}
+.ai-icon{font-size:20px;flex-shrink:0}
+.ai-body h4{font-size:13px;font-weight:700;margin-bottom:3px}
+.ai-body p{font-size:12px;color:var(--muted)}
+.ai-meta{display:flex;gap:8px;margin-top:6px;align-items:center}
+.ai-time{font-size:11px;color:var(--muted)}
+
+/* ── MAP ─────────────────────────────── */
+.zone-map{height:380px;border-radius:10px;overflow:hidden;margin-top:12px}
+.map-legend{display:flex;gap:14px;margin-top:8px;font-size:12px;color:var(--muted)}
+.leg{width:12px;height:12px;border-radius:3px;display:inline-block;margin-right:4px}
+
+/* ── SALARY TABLE ────────────────────── */
+.salary-formula{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);
+  border-radius:10px;padding:12px 16px;font-size:13px;color:var(--accent);margin-bottom:16px}
+.progress-bar-wrap{background:var(--border);border-radius:4px;height:6px;width:100%;margin-top:2px}
+.progress-bar-fill{height:100%;border-radius:4px;background:var(--accent);transition:width .8s}
+
+/* ── STAT MINI ───────────────────────── */
+.stat-mini{display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.05);padding:4px 10px;border-radius:20px;font-size:12px}
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="tb-brand">♻️ <span>Smart</span>Waste Analytics</div>
+  <div class="tb-right">
+    <div class="live-badge"><div class="live-dot"></div>Live Data</div>
+    <div class="date-range">
+      <button class="dr-btn" onclick="setRange('today',this)">Today</button>
+      <button class="dr-btn active" onclick="setRange('week',this)">This Week</button>
+      <button class="dr-btn" onclick="setRange('month',this)">This Month</button>
+    </div>
+    <button class="export-btn" onclick="exportReport()">⬇ Export</button>
+  </div>
+</div>
+
+<div class="page">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sb-section">Overview</div>
+    <div class="sb-item active" onclick="showSection('overview',this)">📊 Dashboard</div>
+    <div class="sb-item" onclick="showSection('collection',this)">🗑️ Collection Stats</div>
+    <div class="sb-section">Performance</div>
+    <div class="sb-item" onclick="showSection('collectors',this)">👷 Collector Ranking</div>
+    <div class="sb-item" onclick="showSection('salary',this)">💰 Wage Calculator</div>
+    <div class="sb-section">Waste & AI</div>
+    <div class="sb-item" onclick="showSection('waste',this)">♻️ Waste Composition</div>
+    <div class="sb-item" onclick="showSection('ai',this)">🤖 AI Insights</div>
+    <div class="sb-section">Geographic</div>
+    <div class="sb-item" onclick="showSection('zones',this)">🗺️ Zone Heatmap</div>
+    <div class="sb-section">System</div>
+    <div class="sb-item" onclick="showSection('alerts',this)">🚨 Alerts <span id="alertCount" style="margin-left:auto;background:var(--red);color:#fff;padding:1px 7px;border-radius:10px;font-size:10px">4</span></div>
+  </nav>
+
+  <div class="main-content">
+
+    <!-- ── OVERVIEW ── -->
+    <section id="sec-overview" class="section active">
+      <div class="section-hdr">
+        <h2>Dashboard Overview</h2>
+        <span class="stat-mini">📅 Week of Jul 7–13, 2025</span>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--kc:#10b981"><div class="kpi-val" id="kpi1">0</div><div class="kpi-lbl">Houses Collected</div><div class="kpi-delta delta-up">↑ 4.2% vs last week</div></div>
+        <div class="kpi-card" style="--kc:#3b82f6"><div class="kpi-val" id="kpi2">0%</div><div class="kpi-lbl">Collection Rate</div><div class="kpi-delta delta-up">↑ 1.8%</div></div>
+        <div class="kpi-card" style="--kc:#f59e0b"><div class="kpi-val" id="kpi3">0%</div><div class="kpi-lbl">Segregation Rate</div><div class="kpi-delta delta-dn">↓ 0.3%</div></div>
+        <div class="kpi-card" style="--kc:#8b5cf6"><div class="kpi-val" id="kpi4">0</div><div class="kpi-lbl">Total Waste (kg)</div><div class="kpi-delta delta-up">↑ 7.1%</div></div>
+        <div class="kpi-card" style="--kc:#06b6d4"><div class="kpi-val" id="kpi5">0</div><div class="kpi-lbl">Active Collectors</div><div class="kpi-delta" style="color:var(--muted)">— No change</div></div>
+        <div class="kpi-card" style="--kc:#ef4444"><div class="kpi-val" id="kpi6">0</div><div class="kpi-lbl">Open Complaints</div><div class="kpi-delta delta-dn">↑ 1 new today</div></div>
+      </div>
+      <div class="chart-grid-3">
+        <div class="chart-card"><div class="cc-hdr"><div class="cc-title">Daily Collection Rate — July 2025</div><span class="cc-badge badge-green">%</span></div><canvas id="dailyChart" height="170"></canvas></div>
+        <div class="chart-card"><div class="cc-hdr"><div class="cc-title">Waste Split Today</div><span class="cc-badge badge-blue">kg</span></div><canvas id="wasteSplitChart" height="170"></canvas></div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card"><div class="cc-hdr"><div class="cc-title">Complaints by Category</div><span class="cc-badge badge-orange">This Month</span></div><canvas id="complaintsChart" height="160"></canvas></div>
+        <div class="chart-card"><div class="cc-hdr"><div class="cc-title">Collector Performance Radar</div></div><canvas id="radarChart" height="160"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ── COLLECTION STATS ── -->
+    <section id="sec-collection" class="section">
+      <div class="section-hdr"><h2>Collection Statistics</h2></div>
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--kc:#10b981"><div class="kpi-val">176</div><div class="kpi-lbl">Total Houses on Routes</div></div>
+        <div class="kpi-card" style="--kc:#3b82f6"><div class="kpi-val">164</div><div class="kpi-lbl">Collected This Week</div></div>
+        <div class="kpi-card" style="--kc:#f59e0b"><div class="kpi-val">8</div><div class="kpi-lbl">Not Available</div></div>
+        <div class="kpi-card" style="--kc:#ef4444"><div class="kpi-val">4</div><div class="kpi-lbl">Missed Pickups</div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card"><div class="cc-hdr"><div class="cc-title">Collections Per Day</div></div><canvas id="collPerDayChart" height="180"></canvas></div>
+        <div class="chart-card"><div class="cc-hdr"><div class="cc-title">Status Breakdown</div></div><canvas id="statusChart" height="180"></canvas></div>
+      </div>
+      <div class="data-table-wrap">
+        <table class="tbl"><thead><tr><th>Route</th><th>Collector</th><th>Assigned</th><th>Collected</th><th>Rate</th><th>Status</th></tr></thead>
+        <tbody id="routeTable"></tbody></table>
+      </div>
+    </section>
+
+    <!-- ── COLLECTOR RANKING ── -->
+    <section id="sec-collectors" class="section">
+      <div class="section-hdr"><h2>Collector Performance Ranking</h2><span class="stat-mini">July 2025</span></div>
+      <div class="data-table-wrap">
+        <table class="tbl">
+          <thead><tr><th>#</th><th>Collector</th><th>Zone</th><th>Collection %</th><th>Segregation %</th><th>Rating</th><th>Attendance</th><th>Grade</th></tr></thead>
+          <tbody id="rankTable"></tbody>
+        </table>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card"><div class="cc-hdr"><div class="cc-title">Collection Rate Comparison</div></div><canvas id="collRateChart" height="180"></canvas></div>
+        <div class="chart-card"><div class="cc-hdr"><div class="cc-title">Citizen Rating Distribution</div></div><canvas id="ratingChart" height="180"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ── WAGE CALCULATOR ── -->
+    <section id="sec-salary" class="section">
+      <div class="section-hdr"><h2>Automated Wage Calculator</h2></div>
+      <div class="salary-formula">
+        <strong>Formula:</strong> Final Salary = Base + (Collection × 0.30) + (Segregation × 0.25) + (Attendance × 0.20) + (Rating × 0.15) + (Timeliness × 0.10) − Penalty
+      </div>
+      <div class="data-table-wrap">
+        <table class="tbl">
+          <thead><tr><th>Collector</th><th>Base</th><th>Collection</th><th>Segregation</th><th>Attendance</th><th>Rating</th><th>Timeliness</th><th>Penalty</th><th>Total</th><th>Grade</th></tr></thead>
+          <tbody id="salaryTable"></tbody>
+        </table>
+      </div>
+      <div class="chart-card" style="margin-bottom:16px"><div class="cc-hdr"><div class="cc-title">Salary Breakdown by Collector</div></div><canvas id="salaryChart" height="180"></canvas></div>
+    </section>
+
+    <!-- ── WASTE COMPOSITION ── -->
+    <section id="sec-waste" class="section">
+      <div class="section-hdr"><h2>Waste Composition Analysis</h2></div>
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--kc:#10b981"><div class="kpi-val">1,240</div><div class="kpi-lbl">Total Waste (kg)</div></div>
+        <div class="kpi-card" style="--kc:#3b82f6"><div class="kpi-val">434</div><div class="kpi-lbl">Recyclable (kg)</div></div>
+        <div class="kpi-card" style="--kc:#f59e0b"><div class="kpi-val">₹8,640</div><div class="kpi-lbl">Recycling Revenue</div></div>
+        <div class="kpi-card" style="--kc:#8b5cf6"><div class="kpi-val">87%</div><div class="kpi-lbl">Segregation Rate</div></div>
+      </div>
+      <div class="chart-grid-3">
+        <div class="chart-card"><div class="cc-hdr"><div class="cc-title">Waste Trend — Last 4 Weeks</div></div><canvas id="wasteTrendChart" height="180"></canvas></div>
+        <div class="chart-card"><div class="cc-hdr"><div class="cc-title">Composition Breakdown</div></div><canvas id="compPieChart" height="180"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ── AI INSIGHTS ── -->
+    <section id="sec-ai" class="section">
+      <div class="section-hdr"><h2>AI Insights — YOLOv8 Analytics</h2></div>
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--kc:#10b981"><div class="kpi-val">342</div><div class="kpi-lbl">Images Classified</div></div>
+        <div class="kpi-card" style="--kc:#3b82f6"><div class="kpi-val">91.2%</div><div class="kpi-lbl">Avg Confidence</div></div>
+        <div class="kpi-card" style="--kc:#8b5cf6"><div class="kpi-val">87%</div><div class="kpi-lbl">Segregation Pass Rate</div></div>
+        <div class="kpi-card" style="--kc:#f59e0b"><div class="kpi-val">44</div><div class="kpi-lbl">Fail Alerts Sent</div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card"><div class="cc-hdr"><div class="cc-title">Daily Segregation Pass/Fail</div></div><canvas id="aiPassChart" height="180"></canvas></div>
+        <div class="chart-card"><div class="cc-hdr"><div class="cc-title">Most Commonly Misclassified</div></div><canvas id="aiMissChart" height="180"></canvas></div>
+      </div>
+      <div class="data-table-wrap">
+        <table class="tbl"><thead><tr><th>Household</th><th>Date</th><th>Dominant Class</th><th>Confidence</th><th>Result</th><th>Alert Sent</th></tr></thead>
+        <tbody id="aiTable"></tbody>
+      </table></div>
+    </section>
+
+    <!-- ── ZONE HEATMAP ── -->
+    <section id="sec-zones" class="section">
+      <div class="section-hdr"><h2>Zone Performance Heatmap</h2></div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="cc-hdr"><div class="cc-title">7-Day Collection Heatmap</div></div>
+          <div class="hm-labels"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div class="heatmap-grid" id="heatmapGrid"></div>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:10px;font-size:11px;color:var(--muted)">
+            Low <div style="display:flex;gap:3px">
+              <div style="width:14px;height:14px;border-radius:3px;background:#1a2535"></div>
+              <div style="width:14px;height:14px;border-radius:3px;background:#14532d"></div>
+              <div style="width:14px;height:14px;border-radius:3px;background:#166534"></div>
+              <div style="width:14px;height:14px;border-radius:3px;background:#16a34a"></div>
+              <div style="width:14px;height:14px;border-radius:3px;background:#22c55e"></div>
+            </div> High
+          </div>
+        </div>
+        <div class="chart-card"><div class="cc-hdr"><div class="cc-title">Zone Compliance %</div></div><canvas id="zoneChart" height="200"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin-top:0"><div class="cc-hdr"><div class="cc-title">Zone Coverage Map</div></div>
+        <div class="zone-map" id="zoneMap"></div>
+        <div class="map-legend">
+          <span><span class="leg" style="background:#10b981"></span>High (>90%)</span>
+          <span><span class="leg" style="background:#f59e0b"></span>Medium (70–90%)</span>
+          <span><span class="leg" style="background:#ef4444"></span>Low (<70%)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── ALERTS ── -->
+    <section id="sec-alerts" class="section">
+      <div class="section-hdr"><h2>System Alerts</h2><button class="export-btn" onclick="clearAlerts()">✓ Mark All Read</button></div>
+      <div class="alert-list" id="alertList"></div>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+/* ════════════════════════════════════════════════
+   SmartWaste Analytics Dashboard — Phase 6 JS
+   ════════════════════════════════════════════════ */
+
+const COLLECTORS = [
+  { name:'Meena Devi',   zone:'A', col:100, seg:97,  rating:4.9, att:100, time:96 },
+  { name:'Ravi Kumar',   zone:'A', col:95,  seg:92,  rating:4.8, att:100, time:91 },
+  { name:'Priya Sharma', zone:'B', col:88,  seg:85,  rating:4.5, att:95,  time:88 },
+  { name:'Ahmed Khan',   zone:'C', col:72,  seg:70,  rating:4.2, att:90,  time:74 },
+  { name:'Suresh Babu',  zone:'D', col:65,  seg:61,  rating:3.9, att:85,  time:68 },
+];
+
+const WASTE_KG = { Organic:520, Plastic:310, Paper:190, Metal:120, Glass:68, 'E-Waste':32 };
+
+const ALERTS_DATA = [
+  { level:'high',   icon:'🚨', title:'Low Collection Rate — Zone D',          body:'Suresh Babu collected only 65% of assigned houses this week. Immediate review required.',    time:'Today 10:15 AM' },
+  { level:'high',   icon:'⚠️', title:'Segregation Failure Spike — Zone C',    body:'Ahmed Khan logged 8 segregation failures in last 3 days. Resident complaints expected.', time:'Today 9:42 AM'  },
+  { level:'medium', icon:'🔋', title:'Vehicle V-103 GPS offline',              body:'Vehicle V-103 has not sent GPS data for 2 hours. Check device battery.',                   time:'Today 8:30 AM'  },
+  { level:'low',    icon:'💰', title:'Salary calculation due',                 body:'July 2025 salary not yet calculated. Click Wage Calculator to process.',                   time:'Yesterday'      },
+];
+
+const ROUTES_DATA = [
+  { name:'Zone A — North', collector:'Ravi Kumar',   assigned:45, collected:43, rate:95.6 },
+  { name:'Zone A — South', collector:'Meena Devi',   assigned:41, collected:41, rate:100  },
+  { name:'Zone B — East',  collector:'Priya Sharma', assigned:38, collected:33, rate:86.8 },
+  { name:'Zone C — South', collector:'Ahmed Khan',   assigned:52, collected:37, rate:71.2 },
+  { name:'Zone D — West',  collector:'Suresh Babu',  assigned:35, collected:23, rate:65.7 },
+];
+
+const AI_TABLE_DATA = [
+  { house:'House 5,  Zone C', date:'Jul 11', cls:'Organic',  conf:94.1, pass:false, alert:true  },
+  { house:'House 12, Zone A', date:'Jul 11', cls:'Plastic',  conf:91.3, pass:true,  alert:false },
+  { house:'House 7,  Zone B', date:'Jul 10', cls:'Mixed',    conf:87.6, pass:false, alert:true  },
+  { house:'House 3,  Zone A', date:'Jul 10', cls:'Organic',  conf:96.2, pass:true,  alert:false },
+  { house:'House 20, Zone D', date:'Jul 09', cls:'E-Waste',  conf:88.0, pass:false, alert:true  },
+];
+
+let charts = {};
+let activeRange = 'week';
+let mapInited   = false;
+
+// ── Helpers ──────────────────────────────────────────────────
+const CHART_COLORS = ['#10b981','#3b82f6','#f59e0b','#8b5cf6','#06b6d4','#ef4444'];
+
+function makeChart(id, type, labels, datasets, opts = {}) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart(ctx, {
+    type,
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color:'#64748b', font:{ size:11 } }, ...opts.legend } },
+      scales: type === 'bar' || type === 'line' ? {
+        x: { grid:{ color:'#1e2a3a' }, ticks:{ color:'#64748b', font:{ size:11 } } },
+        y: { grid:{ color:'#1e2a3a' }, ticks:{ color:'#64748b', font:{ size:11 } }, ...opts.y }
+      } : {},
+      ...opts,
+    }
+  });
+}
+
+const salary = (c) => {
+  const base = 12000;
+  const col  = Math.round(base * 0.30 * c.col  / 100);
+  const seg  = Math.round(base * 0.25 * c.seg  / 100);
+  const att  = Math.round(base * 0.20 * c.att  / 100);
+  const rat  = Math.round(base * 0.15 * (c.rating / 5));
+  const tim  = Math.round(base * 0.10 * c.time / 100);
+  const pen  = c.col < 70 ? 500 : 0;
+  return { base, col, seg, att, rat, tim, pen, total: base+col+seg+att+rat+tim-pen };
+};
+
+const grade = r => r>=90?'A':r>=75?'B':r>=60?'C':'D';
+const gradeColor = g => ({'A':'pill-green','B':'pill-blue','C':'pill-orange','D':'pill-red'})[g];
+
+// ── Navigation ────────────────────────────────────────────────
+function showSection(name, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  renderSection(name);
+}
+
+function setRange(r, btn) {
+  activeRange = r;
+  document.querySelectorAll('.dr-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSection('overview');
+}
+
+function exportReport() {
+  alert('📊 Report exported as PDF — saved to Downloads\n(Demo: no actual file generated)');
+}
+
+function clearAlerts() {
+  document.getElementById('alertList').innerHTML =
+    '<div style="padding:32px;text-align:center;color:var(--muted)">✅ All alerts cleared</div>';
+  document.getElementById('alertCount').style.display = 'none';
+}
+
+// ── Render dispatcher ─────────────────────────────────────────
+function renderSection(name) {
+  const fn = {
+    overview:   renderOverview,
+    collection: renderCollection,
+    collectors: renderCollectors,
+    salary:     renderSalary,
+    waste:      renderWaste,
+    ai:         renderAI,
+    zones:      renderZones,
+    alerts:     renderAlerts,
+  };
+  if (fn[name]) fn[name]();
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────
+function renderOverview() {
+  const mult = { today:.14, week:1, month:4.3 }[activeRange] || 1;
+  animateKPI('kpi1', Math.round(164 * mult));
+  animateKPI('kpi2', '93%');
+  animateKPI('kpi3', '87%');
+  animateKPI('kpi4', Math.round(1240 * mult));
+  animateKPI('kpi5', 5);
+  animateKPI('kpi6', 4);
+
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  makeChart('dailyChart','line', days, [{
+    label:'Collection %', data:[94,88,91,97,85,78,92],
+    borderColor:'#10b981', backgroundColor:'rgba(16,185,129,.1)',
+    tension:.4, fill:true, pointBackgroundColor:'#10b981',
+  }], { y:{ min:60, max:105, ticks:{ callback:v=>v+'%' } } });
+
+  const wLabels = Object.keys(WASTE_KG);
+  makeChart('wasteSplitChart','doughnut', wLabels, [{
+    data: Object.values(WASTE_KG),
+    backgroundColor: CHART_COLORS, borderWidth:0,
+  }], { cutout:'60%', plugins:{ legend:{ position:'bottom' } } });
+
+  makeChart('complaintsChart','bar',
+    ['Not Collected','Rude Behaviour','Late Pickup','Spill','Noise','Other'],
+    [{ label:'Complaints', data:[8,5,4,3,2,3],
+       backgroundColor:'rgba(239,68,68,.7)', borderRadius:5, borderSkipped:false }],
+    { plugins:{ legend:{ display:false } } }
+  );
+
+  makeChart('radarChart','radar',
+    ['Collection','Segregation','Rating','Attendance','Timeliness'],
+    COLLECTORS.slice(0,3).map((c,i) => ({
+      label: c.name.split(' ')[0],
+      data: [c.col, c.seg, c.rating*20, c.att, c.time],
+      borderColor: CHART_COLORS[i], backgroundColor: CHART_COLORS[i].replace(')','.12)').replace('#','rgba(').replace('hex',''),
+      pointBackgroundColor: CHART_COLORS[i],
+    })),
+    { scales:{ r:{ grid:{ color:'#1e2a3a' }, ticks:{ color:'#64748b', backdropColor:'transparent' },
+                    pointLabels:{ color:'#64748b', font:{ size:11 } } } } }
+  );
+}
+
+// ── COLLECTION ────────────────────────────────────────────────
+function renderCollection() {
+  makeChart('collPerDayChart','bar',
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    [{ label:'Collected', data:[32,28,31,35,22,18,30], backgroundColor:'rgba(16,185,129,.7)', borderRadius:5 },
+     { label:'Total',     data:[35,31,33,36,25,20,33], backgroundColor:'rgba(59,130,246,.3)',   borderRadius:5 }],
+    { plugins:{ legend:{ labels:{ color:'#64748b' } } } }
+  );
+  makeChart('statusChart','doughnut',
+    ['Collected','Not Available','Missed'],
+    [{ data:[164,8,4], backgroundColor:['#10b981','#f59e0b','#ef4444'], borderWidth:0 }],
+    { cutout:'55%', plugins:{ legend:{ position:'bottom' } } }
+  );
+
+  document.getElementById('routeTable').innerHTML = ROUTES_DATA.map(r => `
+    <tr>
+      <td><strong>${r.name}</strong></td>
+      <td>${r.collector}</td>
+      <td>${r.assigned}</td>
+      <td>${r.collected}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-bar-wrap" style="width:80px"><div class="progress-bar-fill" style="width:${r.rate}%;background:${r.rate>=90?'#10b981':r.rate>=75?'#f59e0b':'#ef4444'}"></div></div>
+          <span style="font-family:monospace;font-size:12px">${r.rate}%</span>
+        </div>
+      </td>
+      <td><span class="pill ${r.rate>=90?'pill-green':r.rate>=75?'pill-orange':'pill-red'}">${r.rate>=90?'On Track':r.rate>=75?'Warning':'At Risk'}</span></td>
+    </tr>`).join('');
+}
+
+// ── COLLECTORS ────────────────────────────────────────────────
+function renderCollectors() {
+  const sorted = [...COLLECTORS].sort((a,b) => b.col - a.col);
+  const badges = ['gold','silver',''];
+  document.getElementById('rankTable').innerHTML = sorted.map((c,i) => {
+    const g = grade(c.col);
+    return `<tr>
+      <td><span class="rank-badge ${badges[i]||''}">${i+1}</span></td>
+      <td><strong>${c.name}</strong></td>
+      <td>Zone ${c.zone}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-bar-wrap" style="width:70px"><div class="progress-bar-fill" style="width:${c.col}%;background:#10b981"></div></div>
+          ${c.col}%
+        </div>
+      </td>
+      <td>${c.seg}%</td>
+      <td>⭐ ${c.rating}</td>
+      <td>${c.att}%</td>
+      <td><span class="pill ${gradeColor(g)}">${g}</span></td>
+    </tr>`;
+  }).join('');
+
+  makeChart('collRateChart','bar', COLLECTORS.map(c=>c.name.split(' ')[0]),
+    [{ label:'Collection %', data:COLLECTORS.map(c=>c.col), backgroundColor:COLLECTORS.map(c=>c.col>=90?'rgba(16,185,129,.7)':c.col>=75?'rgba(245,158,11,.7)':'rgba(239,68,68,.7)'), borderRadius:6 }],
+    { plugins:{ legend:{ display:false } }, y:{ min:50, ticks:{ callback:v=>v+'%' } } }
+  );
+
+  makeChart('ratingChart','bar', COLLECTORS.map(c=>c.name.split(' ')[0]),
+    [{ label:'Rating', data:COLLECTORS.map(c=>c.rating), backgroundColor:'rgba(139,92,246,.7)', borderRadius:6 }],
+    { plugins:{ legend:{ display:false } }, y:{ min:3, max:5 } }
+  );
+}
+
+// ── SALARY ───────────────────────────────────────────────────
+function renderSalary() {
+  document.getElementById('salaryTable').innerHTML = COLLECTORS.map(c => {
+    const s = salary(c); const g = grade(c.col);
+    return `<tr>
+      <td><strong>${c.name}</strong></td>
+      <td style="font-family:monospace">₹${s.base.toLocaleString()}</td>
+      <td style="color:#10b981;font-family:monospace">+₹${s.col.toLocaleString()}</td>
+      <td style="color:#3b82f6;font-family:monospace">+₹${s.seg.toLocaleString()}</td>
+      <td style="color:#06b6d4;font-family:monospace">+₹${s.att.toLocaleString()}</td>
+      <td style="color:#8b5cf6;font-family:monospace">+₹${s.rat.toLocaleString()}</td>
+      <td style="color:#f59e0b;font-family:monospace">+₹${s.tim.toLocaleString()}</td>
+      <td style="color:#ef4444;font-family:monospace">-₹${s.pen.toLocaleString()}</td>
+      <td style="font-family:monospace;font-weight:800;font-size:14px">₹${s.total.toLocaleString()}</td>
+      <td><span class="pill ${gradeColor(g)}">${g}</span></td>
+    </tr>`;
+  }).join('');
+
+  makeChart('salaryChart','bar', COLLECTORS.map(c=>c.name.split(' ')[0]),
+    [
+      { label:'Base',        data:COLLECTORS.map(()=>12000),           backgroundColor:'rgba(100,116,139,.4)', stack:'s' },
+      { label:'Collection',  data:COLLECTORS.map(c=>salary(c).col),    backgroundColor:'rgba(16,185,129,.7)',   stack:'s' },
+      { label:'Segregation', data:COLLECTORS.map(c=>salary(c).seg),    backgroundColor:'rgba(59,130,246,.7)',   stack:'s' },
+      { label:'Attendance',  data:COLLECTORS.map(c=>salary(c).att),    backgroundColor:'rgba(6,182,212,.7)',    stack:'s' },
+      { label:'Rating',      data:COLLECTORS.map(c=>salary(c).rat),    backgroundColor:'rgba(139,92,246,.7)',   stack:'s' },
+      { label:'Timeliness',  data:COLLECTORS.map(c=>salary(c).tim),    backgroundColor:'rgba(245,158,11,.7)',   stack:'s' },
+      { label:'Penalty',     data:COLLECTORS.map(c=>-salary(c).pen),   backgroundColor:'rgba(239,68,68,.7)',    stack:'s' },
+    ],
+    { plugins:{ legend:{ position:'bottom' } }, scales:{
+        x:{ stacked:true, grid:{ color:'#1e2a3a' }, ticks:{ color:'#64748b' } },
+        y:{ stacked:true, grid:{ color:'#1e2a3a' }, ticks:{ color:'#64748b', callback:v=>'₹'+v.toLocaleString() } }
+      }
+    }
+  );
+}
+
+// ── WASTE ────────────────────────────────────────────────────
+function renderWaste() {
+  makeChart('wasteTrendChart','line',
+    ['Week 1','Week 2','Week 3','Week 4'],
+    Object.entries(WASTE_KG).map(([k,v],i) => ({
+      label:k, data:[v*.7,v*.85,v*.9,v].map(x=>Math.round(x)),
+      borderColor:CHART_COLORS[i], tension:.4, fill:false, pointRadius:4,
+    })),
+    { plugins:{ legend:{ position:'bottom' } } }
+  );
+
+  makeChart('compPieChart','doughnut', Object.keys(WASTE_KG),
+    [{ data:Object.values(WASTE_KG), backgroundColor:CHART_COLORS, borderWidth:0 }],
+    { cutout:'55%', plugins:{ legend:{ position:'bottom' } } }
+  );
+}
+
+// ── AI ───────────────────────────────────────────────────────
+function renderAI() {
+  makeChart('aiPassChart','bar',
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    [{ label:'Pass', data:[44,38,42,50,36,28,43], backgroundColor:'rgba(16,185,129,.7)', borderRadius:4, stack:'s' },
+     { label:'Fail', data:[6,8,5,4,9,7,4],        backgroundColor:'rgba(239,68,68,.7)',  borderRadius:4, stack:'s' }],
+    { scales:{ x:{ stacked:true, grid:{ color:'#1e2a3a' }, ticks:{ color:'#64748b' } }, y:{ stacked:true, grid:{ color:'#1e2a3a' }, ticks:{ color:'#64748b' } } },
+      plugins:{ legend:{ position:'bottom', labels:{ color:'#64748b' } } } }
+  );
+
+  makeChart('aiMissChart','bar',
+    ['Plastic in Organic','E-Waste in Dry','Mixed Bins','Glass in Organic','Metal in Paper'],
+    [{ label:'Occurrences', data:[18,12,8,6,4], backgroundColor:'rgba(245,158,11,.7)', borderRadius:5 }],
+    { indexAxis:'y', plugins:{ legend:{ display:false } }, y:{ grid:{ color:'#1e2a3a' }, ticks:{ color:'#64748b' } }, x:{ grid:{ color:'#1e2a3a' }, ticks:{ color:'#64748b' } } }
+  );
+
+  document.getElementById('aiTable').innerHTML = AI_TABLE_DATA.map(r => `
+    <tr>
+      <td>${r.house}</td>
+      <td>${r.date}</td>
+      <td>${r.cls}</td>
+      <td style="font-family:monospace">${r.conf}%</td>
+      <td><span class="pill ${r.pass?'pill-green':'pill-red'}">${r.pass?'PASS':'FAIL'}</span></td>
+      <td>${r.alert?'<span style="color:#f59e0b">⚠️ Sent</span>':'<span style="color:#64748b">—</span>'}</td>
+    </tr>`).join('');
+}
+
+// ── ZONES ────────────────────────────────────────────────────
+function renderZones() {
+  // Heatmap
+  const vals = Array.from({length:28},()=>Math.floor(Math.random()*100));
+  const colors = ['#1a2535','#14532d','#166534','#16a34a','#22c55e'];
+  document.getElementById('heatmapGrid').innerHTML = vals.map((v,i) =>
+    `<div class="hm-day" style="background:${colors[Math.floor(v/22)]}" title="${v}% collection on day ${i+1}"></div>`
+  ).join('');
+
+  makeChart('zoneChart','bar',
+    ['Zone A','Zone B','Zone C','Zone D'],
+    [{ label:'Compliance %', data:[97,87,71,65],
+       backgroundColor:['rgba(16,185,129,.7)','rgba(245,158,11,.7)','rgba(239,68,68,.7)','rgba(239,68,68,.7)'],
+       borderRadius:6 }],
+    { plugins:{ legend:{ display:false } }, y:{ min:50, max:105, ticks:{ callback:v=>v+'%' } } }
+  );
+
+  if (!mapInited) {
+    mapInited = true;
+    setTimeout(() => {
+      const map = L.map('zoneMap').setView([10.9601,78.0766], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap' }).addTo(map);
+      const zones = [
+        { name:'Zone A', lat:10.9612, lng:78.0772, color:'#10b981', rate:'97%' },
+        { name:'Zone B', lat:10.9580, lng:78.0755, color:'#f59e0b', rate:'87%' },
+        { name:'Zone C', lat:10.9625, lng:78.0790, color:'#ef4444', rate:'71%' },
+        { name:'Zone D', lat:10.9595, lng:78.0740, color:'#ef4444', rate:'65%' },
+      ];
+      zones.forEach(z => {
+        L.circle([z.lat,z.lng],{ radius:300, color:z.color, fillColor:z.color, fillOpacity:.25, weight:2 })
+          .addTo(map).bindPopup(`<b>${z.name}</b><br>Collection Rate: ${z.rate}`);
+        L.marker([z.lat,z.lng]).addTo(map).bindPopup(`<b>${z.name}</b><br>Rate: ${z.rate}`);
+      });
+    }, 200);
+  }
+}
+
+// ── ALERTS ────────────────────────────────────────────────────
+function renderAlerts() {
+  document.getElementById('alertList').innerHTML = ALERTS_DATA.map(a => `
+    <div class="alert-item ${a.level}">
+      <div class="ai-icon">${a.icon}</div>
+      <div class="ai-body">
+        <h4>${a.title}</h4>
+        <p>${a.body}</p>
+        <div class="ai-meta">
+          <span class="ai-time">🕐 ${a.time}</span>
+          <span class="pill ${a.level==='high'?'pill-red':a.level==='medium'?'pill-orange':'pill-blue'}">${a.level.toUpperCase()}</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Animated KPI counter ─────────────────────────────────────
+function animateKPI(id, target) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (typeof target === 'string') { el.textContent = target; return; }
+  let cur = 0, step = Math.max(1, Math.ceil(target/40));
+  const t = setInterval(() => {
+    cur = Math.min(cur+step, target);
+    el.textContent = cur.toLocaleString();
+    if (cur >= target) clearInterval(t);
+  }, 25);
+}
+
+// ── Boot ─────────────────────────────────────────────────────
+window.onload = () => { renderOverview(); renderAlerts(); };
+</script>
+</body>
+</html>
